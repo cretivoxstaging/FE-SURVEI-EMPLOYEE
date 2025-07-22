@@ -1,103 +1,120 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
+} from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import Link from "next/link"
+import { employees } from "@/lib/employee.data"
+import { useSurvey } from "@/context/survey-context"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [open, setOpen] = useState(false)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
+  const { setSelectedEmployee } = useSurvey()
+  const router = useRouter()
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleStartSurvey = () => {
+    if (selectedEmployeeId) {
+      setSelectedEmployee(employees.find((emp) => emp.id === selectedEmployeeId)!)
+      router.push("/survey")
+    }
+  }
+
+  const selectedEmployeeData = employees.find((emp) => emp.id === selectedEmployeeId)
+
+  return (
+    <section className="flex flex-col items-center justify-center h-screen px-4">
+      <h1 className="text-4xl xl:text-9xl font-bold text-center leading-tight">Annual <br /> Survey Employee</h1>
+
+      <div className="flex flex-col gap-2 items-center w-full max-w-md">
+        {/* Employee Search Dropdown */}
+        <div className="mt-2 md:mt-12 w-full">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between h-10 border border-black bg-transparent"
+              >
+                {selectedEmployeeId ? selectedEmployeeData?.name : "Select Employee Name..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+
+            <PopoverContent
+              side="bottom"             
+              align="start"            
+              sideOffset={8}            
+              collisionPadding={16}      
+              avoidCollisions={false}     
+              className="w-full p-0 z-50" 
+            >
+              <Command>
+                <CommandInput placeholder="Search employee..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>No employee found.</CommandEmpty>
+                  <CommandGroup>
+                    {employees.map((employee) => (
+                      <CommandItem
+                        key={employee.id}
+                        value={employee.name}
+                        onSelect={() => {
+                          const isSame = employee.id === selectedEmployeeId
+                          setSelectedEmployeeId(isSame ? "" : employee.id)
+                          setSelectedEmployee(isSame ? null : employee)
+                          setOpen(false)
+                        }}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{employee.name}</span>
+                          <span className="text-sm text-gray-500">
+                            {employee.department} - {employee.position}
+                          </span>
+                        </div>
+                        <Check
+                          className={cn(
+                            "ml-auto h-4 w-4",
+                            selectedEmployeeId === employee.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {selectedEmployeeData && (
+          <div className="mt-2 p-3 bg-gray-50 rounded-lg border w-full text-center">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">{selectedEmployeeData.department}</span> - {selectedEmployeeData.position}
+            </p>
+          </div>
+        )}
+
+        <Button
+          onClick={handleStartSurvey}
+          className="md:mt-12 w-full bg-white text-black border border-b-4 cursor-pointer hover:bg-white hover:border transition-all duration-300 border-black border-r-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!selectedEmployeeId}
+          type="submit"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+          Start Survey !
+        </Button>
+
+        {!selectedEmployeeId && (
+          <p className="text-sm text-gray-500 mt-2">Please select an employee to start the survey</p>
+        )}
+      </div>
+    </section>
+  )
 }

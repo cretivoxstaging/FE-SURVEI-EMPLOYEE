@@ -1,0 +1,23 @@
+// Data dummy employee
+export const employees = [
+  { id: "1", name: "Ahmad Rizki Pratama", department: "IT", position: "Software Engineer" },
+  { id: "2", name: "Siti Nurhaliza", department: "HR", position: "HR Manager" },
+  { id: "3", name: "Budi Santoso", department: "Finance", position: "Financial Analyst" },
+  { id: "4", name: "Maya Sari Dewi", department: "Marketing", position: "Marketing Specialist" },
+  { id: "5", name: "Andi Wijaya", department: "Operations", position: "Operations Manager" },
+  { id: "6", name: "Rina Kartika", department: "Sales", position: "Sales Executive" },
+  { id: "7", name: "Dedi Kurniawan", department: "IT", position: "System Administrator" },
+  { id: "8", name: "Lestari Wulandari", department: "HR", position: "HR Specialist" },
+  { id: "9", name: "Fajar Nugroho", department: "Finance", position: "Accountant" },
+  { id: "10", name: "Indira Safitri", department: "Marketing", position: "Content Creator" },
+  { id: "11", name: "Reza Firmansyah", department: "IT", position: "Frontend Developer" },
+  { id: "12", name: "Dewi Anggraini", department: "Operations", position: "Quality Assurance" },
+  { id: "13", name: "Hendra Setiawan", department: "Sales", position: "Sales Manager" },
+  { id: "14", name: "Putri Maharani", department: "Marketing", position: "Digital Marketing" },
+  { id: "15", name: "Agus Prasetyo", department: "Finance", position: "Finance Manager" },
+  { id: "16", name: "Nita Puspita", department: "HR", position: "Recruitment Specialist" },
+  { id: "17", name: "Bayu Aditama", department: "IT", position: "Backend Developer" },
+  { id: "18", name: "Citra Melati", department: "Operations", position: "Project Coordinator" },
+  { id: "19", name: "Dimas Pratama", department: "Sales", position: "Business Development" },
+  { id: "20", name: "Eka Rahayu", department: "Marketing", position: "Brand Manager" },
+]
