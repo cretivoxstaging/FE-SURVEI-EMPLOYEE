@@ -28,7 +28,7 @@ export default function EmployeePage() {
   const [employees, setEmployees] = useState<Employee[]>([
     {
       id: "1",
-      name: "Mohammad Rizal Fajri",
+      name: "Mohammad Rizqi Fajri",
       email: "mohammad@gmail.com",
       position: "Frontend Developer Intern",
       division: "IT",
@@ -36,7 +36,7 @@ export default function EmployeePage() {
     },
     {
       id: "2",
-      name: "Mohammad Rizal Fajri",
+      name: "Mohammad Rizqi Fajri",
       email: "mohammad@gmail.com",
       position: "Frontend Developer Intern",
       division: "IT",
@@ -44,7 +44,7 @@ export default function EmployeePage() {
     },
     {
       id: "3",
-      name: "Mohammad Rizal Fajri",
+      name: "Mohammad Rizqi Fajri",
       email: "mohammad@gmail.com",
       position: "Frontend Developer Intern",
       division: "IT",
@@ -52,7 +52,7 @@ export default function EmployeePage() {
     },
     {
       id: "4",
-      name: "Mohammad Rizal Fajri",
+      name: "Mohammad Rizqi Fajri",
       email: "mohammad@gmail.com",
       position: "Frontend Developer Intern",
       division: "IT",
