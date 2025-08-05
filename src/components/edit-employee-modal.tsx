@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,8 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FormField } from "@/components/ui/form-field"
+import { useFormValidation } from "@/hooks/use-form-validation"
+import { employeeSchema, type EmployeeFormData } from "@/lib/validation"
 
 interface Employee {
   id: string
@@ -29,40 +31,44 @@ interface EditEmployeeModalProps {
   open: boolean
   onClose: () => void
   employee: Employee | null
-  onEdit: (employee: Omit<Employee, "id">) => void
+  onEdit: (employee: EmployeeFormData) => void
 }
 
 export function EditEmployeeModal({ open, onClose, employee, onEdit }: EditEmployeeModalProps) {
-  const [editedEmployee, setEditedEmployee] = useState<Omit<Employee, "id">>({
+  const initialData: EmployeeFormData = {
     name: "",
     email: "",
     position: "",
     division: "",
     status: "Active",
+  }
+
+  const {
+    data: editedEmployee,
+    isSubmitting,
+    handleChange,
+    handleSubmit,
+    reset,
+    getFieldError,
+  } = useFormValidation({
+    schema: employeeSchema,
+    initialData,
   })
 
   useEffect(() => {
     if (employee) {
-      setEditedEmployee({
-        name: employee.name,
-        email: employee.email,
-        position: employee.position,
-        division: employee.division,
-        status: employee.status,
-      })
+      reset()
+      handleChange("name", employee.name)
+      handleChange("email", employee.email)
+      handleChange("position", employee.position)
+      handleChange("division", employee.division)
+      handleChange("status", employee.status)
     }
-  }, [employee])
+  }, [employee, reset, handleChange])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (
-      editedEmployee.name.trim() &&
-      editedEmployee.email.trim() &&
-      editedEmployee.position.trim() &&
-      editedEmployee.division.trim()
-    ) {
-      onEdit(editedEmployee)
-    }
+  const onSubmit = async (data: EmployeeFormData) => {
+    onEdit(data)
+    onClose()
   }
 
   return (
@@ -72,49 +78,64 @@ export function EditEmployeeModal({ open, onClose, employee, onEdit }: EditEmplo
           <DialogTitle>Edit Employee</DialogTitle>
           <DialogDescription>Make changes to employee information.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          handleSubmit(onSubmit)
+        }}>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-employee-name">Full Name</Label>
+            <FormField
+              label="Full Name"
+              error={getFieldError("name")}
+              required
+            >
               <Input
                 id="edit-employee-name"
                 value={editedEmployee.name}
-                onChange={(e) => setEditedEmployee((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => handleChange("name", e.target.value)}
                 placeholder="Enter full name"
-                required
+                className={getFieldError("name") ? "border-destructive" : ""}
               />
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="edit-employee-email">Email</Label>
+            <FormField
+              label="Email"
+              error={getFieldError("email")}
+              required
+            >
               <Input
                 id="edit-employee-email"
                 type="email"
                 value={editedEmployee.email}
-                onChange={(e) => setEditedEmployee((prev) => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => handleChange("email", e.target.value)}
                 placeholder="Enter email address"
-                required
+                className={getFieldError("email") ? "border-destructive" : ""}
               />
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="edit-employee-position">Position</Label>
+            <FormField
+              label="Position"
+              error={getFieldError("position")}
+              required
+            >
               <Input
                 id="edit-employee-position"
                 value={editedEmployee.position}
-                onChange={(e) => setEditedEmployee((prev) => ({ ...prev, position: e.target.value }))}
+                onChange={(e) => handleChange("position", e.target.value)}
                 placeholder="Enter position"
-                required
+                className={getFieldError("position") ? "border-destructive" : ""}
               />
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="edit-employee-division">Division</Label>
+            <FormField
+              label="Division"
+              error={getFieldError("division")}
+              required
+            >
               <Select
                 value={editedEmployee.division}
-                onValueChange={(value) => setEditedEmployee((prev) => ({ ...prev, division: value }))}
+                onValueChange={(value) => handleChange("division", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={getFieldError("division") ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select division" />
                 </SelectTrigger>
                 <SelectContent>
@@ -125,17 +146,17 @@ export function EditEmployeeModal({ open, onClose, employee, onEdit }: EditEmplo
                   <SelectItem value="Operations">Operations</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="edit-employee-status">Status</Label>
+            <FormField
+              label="Status"
+              error={getFieldError("status")}
+            >
               <Select
                 value={editedEmployee.status}
-                onValueChange={(value: "Active" | "Inactive") =>
-                  setEditedEmployee((prev) => ({ ...prev, status: value }))
-                }
+                onValueChange={(value: "Active" | "Inactive") => handleChange("status", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={getFieldError("status") ? "border-destructive" : ""}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -143,13 +164,15 @@ export function EditEmployeeModal({ open, onClose, employee, onEdit }: EditEmplo
                   <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
