@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,48 +12,46 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface Employee {
-  name: string
-  email: string
-  position: string
-  division: string
-  status: "Active" | "Inactive"
-}
+import { FormField } from "@/components/ui/form-field"
+import { useFormValidation } from "@/hooks/use-form-validation"
+import { employeeSchema, type EmployeeFormData } from "@/lib/validation"
 
 interface AddEmployeeModalProps {
   open: boolean
   onClose: () => void
-  onAdd: (employee: Employee) => void
+  onAdd: (employee: EmployeeFormData) => void
 }
 
 export function AddEmployeeModal({ open, onClose, onAdd }: AddEmployeeModalProps) {
-  const [employee, setEmployee] = useState<Employee>({
+  const initialData: EmployeeFormData = {
     name: "",
     email: "",
     position: "",
     division: "",
     status: "Active",
+  }
+
+  const {
+    data: employee,
+    isSubmitting,
+    handleChange,
+    handleSubmit,
+    reset,
+    getFieldError,
+  } = useFormValidation({
+    schema: employeeSchema,
+    initialData,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (employee.name.trim() && employee.email.trim() && employee.position.trim() && employee.division.trim()) {
-      onAdd(employee)
-      handleClose()
-    }
+  const onSubmit = async (data: EmployeeFormData) => {
+    onAdd(data)
+    reset()
+    onClose()
   }
 
   const handleClose = () => {
-    setEmployee({
-      name: "",
-      email: "",
-      position: "",
-      division: "",
-      status: "Active",
-    })
+    reset()
     onClose()
   }
 
@@ -65,49 +62,64 @@ export function AddEmployeeModal({ open, onClose, onAdd }: AddEmployeeModalProps
           <DialogTitle>Add New Employee</DialogTitle>
           <DialogDescription>Add a new employee to your organization.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          handleSubmit(onSubmit)
+        }}>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="employee-name">Full Name</Label>
+            <FormField
+              label="Full Name"
+              error={getFieldError("name")}
+              required
+            >
               <Input
                 id="employee-name"
                 value={employee.name}
-                onChange={(e) => setEmployee((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => handleChange("name", e.target.value)}
                 placeholder="Enter full name"
-                required
+                className={getFieldError("name") ? "border-destructive" : ""}
               />
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="employee-email">Email</Label>
+            <FormField
+              label="Email"
+              error={getFieldError("email")}
+              required
+            >
               <Input
                 id="employee-email"
                 type="email"
                 value={employee.email}
-                onChange={(e) => setEmployee((prev) => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => handleChange("email", e.target.value)}
                 placeholder="Enter email address"
-                required
+                className={getFieldError("email") ? "border-destructive" : ""}
               />
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="employee-position">Position</Label>
+            <FormField
+              label="Position"
+              error={getFieldError("position")}
+              required
+            >
               <Input
                 id="employee-position"
                 value={employee.position}
-                onChange={(e) => setEmployee((prev) => ({ ...prev, position: e.target.value }))}
+                onChange={(e) => handleChange("position", e.target.value)}
                 placeholder="Enter position"
-                required
+                className={getFieldError("position") ? "border-destructive" : ""}
               />
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="employee-division">Division</Label>
+            <FormField
+              label="Division"
+              error={getFieldError("division")}
+              required
+            >
               <Select
                 value={employee.division}
-                onValueChange={(value) => setEmployee((prev) => ({ ...prev, division: value }))}
+                onValueChange={(value) => handleChange("division", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={getFieldError("division") ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select division" />
                 </SelectTrigger>
                 <SelectContent>
@@ -118,15 +130,17 @@ export function AddEmployeeModal({ open, onClose, onAdd }: AddEmployeeModalProps
                   <SelectItem value="Operations">Operations</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="employee-status">Status</Label>
+            <FormField
+              label="Status"
+              error={getFieldError("status")}
+            >
               <Select
                 value={employee.status}
-                onValueChange={(value: "Active" | "Inactive") => setEmployee((prev) => ({ ...prev, status: value }))}
+                onValueChange={(value: "Active" | "Inactive") => handleChange("status", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={getFieldError("status") ? "border-destructive" : ""}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -134,13 +148,15 @@ export function AddEmployeeModal({ open, onClose, onAdd }: AddEmployeeModalProps
                   <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">Add Employee</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Adding..." : "Add Employee"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
