@@ -8,9 +8,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { employees } from "@/lib/employee.data"
 import { useSurvey } from "@/context/survey-context"
 import { useRouter } from "next/navigation"
+import { useEmployee } from "@/hooks/use-employee"
+
 
 export default function Home() {
   const [open, setOpen] = useState(false)
@@ -18,21 +19,33 @@ export default function Home() {
   const { setSelectedEmployee } = useSurvey()
   const router = useRouter()
 
-  const handleStartSurvey = () => {
-    if (selectedEmployeeId) {
-      setSelectedEmployee(employees.find((emp) => emp.id === selectedEmployeeId)!)
-      router.push("/survey")
-    }
-  }
+  // Pakai custom hook lo
+  const { employees, isLoading } = useEmployee()
 
-  const selectedEmployeeData = employees.find((emp) => emp.id === selectedEmployeeId)
+  const handleStartSurvey = () => {
+    const selected = employees?.find(
+      (emp: { id: number; name: string; job_position: string }) => emp.id === Number(selectedEmployeeId)
+    );
+    if (selected) {
+      setSelectedEmployee({
+        id: String(selected.id),
+        name: selected.name,
+        department: selected.job_position,
+        position: selected.job_position,
+      });
+      router.push("/survey");
+    }
+  };
+
+  const selectedEmployeeData = employees?.find(
+    (emp: { id: number; name: string; job_position: string }) => emp.id === Number(selectedEmployeeId)
+  );
 
   return (
     <section className="flex flex-col items-center justify-center h-screen px-4">
       <h1 className="text-4xl xl:text-9xl font-bold text-center leading-tight">Annual <br /> Survey Employee</h1>
 
       <div className="flex flex-col gap-2 items-center w-full max-w-md">
-        {/* Employee Search Dropdown */}
         <div className="mt-2 md:mt-12 w-full">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -42,45 +55,52 @@ export default function Home() {
                 aria-expanded={open}
                 className="w-full justify-between h-10 border border-black bg-transparent"
               >
-                {selectedEmployeeId ? selectedEmployeeData?.name : "Select Employee Name..."}
+                {selectedEmployeeId
+                  ? selectedEmployeeData?.name
+                  : isLoading
+                    ? "Loading..."
+                    : "Select Employee Name..."}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
 
             <PopoverContent
-              side="bottom"             
-              align="start"            
-              sideOffset={8}            
-              collisionPadding={16}      
-              avoidCollisions={false}     
-              className="w-full p-0 z-50" 
+              side="bottom"
+              align="start"
+              sideOffset={8}
+              collisionPadding={16}
+              avoidCollisions={false}
+              className="w-full p-0 z-50"
             >
               <Command>
                 <CommandInput placeholder="Search employee..." className="h-9" />
                 <CommandList>
                   <CommandEmpty>No employee found.</CommandEmpty>
                   <CommandGroup>
-                    {employees.map((employee) => (
+                    {employees?.map((emp: { id: number; name: string; job_position: string }) => (
                       <CommandItem
-                        key={employee.id}
-                        value={employee.name}
+                        key={emp.id}
+                        value={emp.name}
                         onSelect={() => {
-                          const isSame = employee.id === selectedEmployeeId
-                          setSelectedEmployeeId(isSame ? "" : employee.id)
-                          setSelectedEmployee(isSame ? null : employee)
-                          setOpen(false)
+                          const isSame = String(emp.id) === selectedEmployeeId;
+                          setSelectedEmployeeId(isSame ? "" : String(emp.id));
+                          setSelectedEmployee(isSame ? null : {
+                            id: String(emp.id),
+                            name: emp.name,
+                            department: emp.job_position,
+                            position: emp.job_position,
+                          });
+                          setOpen(false);
                         }}
                       >
                         <div className="flex flex-col">
-                          <span className="font-medium">{employee.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {employee.department} - {employee.position}
-                          </span>
+                          <span className="font-medium">{emp.name}</span>
+                          <span className="text-sm text-gray-500">{emp.job_position}</span>
                         </div>
                         <Check
                           className={cn(
                             "ml-auto h-4 w-4",
-                            selectedEmployeeId === employee.id ? "opacity-100" : "opacity-0"
+                            selectedEmployeeId === String(emp.id) ? "opacity-100" : "opacity-0"
                           )}
                         />
                       </CommandItem>
@@ -90,13 +110,12 @@ export default function Home() {
               </Command>
             </PopoverContent>
           </Popover>
-
         </div>
 
         {selectedEmployeeData && (
           <div className="mt-2 p-3 bg-gray-50 rounded-lg border w-full text-center">
             <p className="text-sm text-gray-600">
-              <span className="font-medium">{selectedEmployeeData.department}</span> - {selectedEmployeeData.position}
+              <span className="font-medium">{selectedEmployeeData.job_position}</span>
             </p>
           </div>
         )}

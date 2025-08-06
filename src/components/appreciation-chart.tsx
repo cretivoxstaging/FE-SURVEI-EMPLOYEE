@@ -37,9 +37,9 @@ export function AppreciationChart({ data }: AppreciationChartProps) {
               <XAxis
                 dataKey="category"
                 tick={{ fontSize: 11 }}
-                angle={window.innerWidth < 640 ? -45 : 0}
-                textAnchor={window.innerWidth < 640 ? "end" : "middle"}
-                height={window.innerWidth < 640 ? 60 : 40}
+                angle={window?.innerWidth < 640 ? -45 : 0}
+                textAnchor={window?.innerWidth < 640 ? "end" : "middle"}
+                height={window?.innerWidth < 640 ? 60 : 40}
               />
               <YAxis tick={{ fontSize: 12 }} />
               <ChartTooltip
