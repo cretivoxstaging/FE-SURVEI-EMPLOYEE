@@ -14,114 +14,76 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { AddEmployeeModal } from "@/components/add-employee-modal"
 import { EditEmployeeModal } from "@/components/edit-employee-modal"
 import { DeleteConfirmModal } from "@/components/delete-confirm-modal"
+import { useEmployee } from "@/hooks/use-employee"
 
 interface Employee {
   id: string
   name: string
   email: string
-  position: string
-  division: string
+  job_position: string
+  departement: string
   status: "Active" | "Inactive"
 }
 
 export default function EmployeePage() {
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: "1",
-      name: "Mohammad Rizqi Fajri",
-      email: "mohammad@gmail.com",
-      position: "Frontend Developer Intern",
-      division: "IT",
-      status: "Active",
-    },
-    {
-      id: "2",
-      name: "Mohammad Rizqi Fajri",
-      email: "mohammad@gmail.com",
-      position: "Frontend Developer Intern",
-      division: "IT",
-      status: "Active",
-    },
-    {
-      id: "3",
-      name: "Mohammad Rizqi Fajri",
-      email: "mohammad@gmail.com",
-      position: "Frontend Developer Intern",
-      division: "IT",
-      status: "Active",
-    },
-    {
-      id: "4",
-      name: "Mohammad Rizqi Fajri",
-      email: "mohammad@gmail.com",
-      position: "Frontend Developer Intern",
-      division: "IT",
-      status: "Active",
-    },
-  ])
+  const { employees = [], isLoading } = useEmployee();
 
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState("");
   const [modals, setModals] = useState({
     addEmployee: false,
     editEmployee: false,
     deleteConfirm: false,
-  })
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  });
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const openModal = (modalName: keyof typeof modals) => {
-    setModals((prev) => ({ ...prev, [modalName]: true }))
-  }
+    setModals((prev) => ({ ...prev, [modalName]: true }));
+  };
 
   const closeModal = (modalName: keyof typeof modals) => {
-    setModals((prev) => ({ ...prev, [modalName]: false }))
-  }
+    setModals((prev) => ({ ...prev, [modalName]: false }));
+  };
 
+  // These handlers would need to be updated to work with API if you want to persist changes
   const handleAddEmployee = (employee: Omit<Employee, "id">) => {
-    const newEmployee: Employee = {
-      ...employee,
-      id: Date.now().toString(),
-    }
-    setEmployees((prev) => [...prev, newEmployee])
-    closeModal("addEmployee")
-  }
+    // You may want to call an API here instead of local state
+    // For now, just close the modal
+    closeModal("addEmployee");
+  };
 
   const handleEditEmployee = (updatedEmployee: Omit<Employee, "id">) => {
-    if (!selectedEmployee) return
-    setEmployees((prev) =>
-      prev.map((emp) => (emp.id === selectedEmployee.id ? { ...updatedEmployee, id: selectedEmployee.id } : emp)),
-    )
-    closeModal("editEmployee")
-    setSelectedEmployee(null)
-  }
+    // You may want to call an API here instead of local state
+    closeModal("editEmployee");
+    setSelectedEmployee(null);
+  };
 
   const handleDeleteEmployee = () => {
-    if (!selectedEmployee) return
-    setEmployees((prev) => prev.filter((emp) => emp.id !== selectedEmployee.id))
-    closeModal("deleteConfirm")
-    setSelectedEmployee(null)
-  }
+    // You may want to call an API here instead of local state
+    closeModal("deleteConfirm");
+    setSelectedEmployee(null);
+  };
 
   const openEditModal = (employee: Employee) => {
-    setSelectedEmployee(employee)
-    openModal("editEmployee")
-  }
+    setSelectedEmployee(employee);
+    openModal("editEmployee");
+  };
 
   const openDeleteModal = (employee: Employee) => {
-    setSelectedEmployee(employee)
-    openModal("deleteConfirm")
-  }
+    setSelectedEmployee(employee);
+    openModal("deleteConfirm");
+  };
 
-  const filteredEmployees = employees.filter((employee) =>
-    employee.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const filteredEmployees = employees.filter((employee: Employee) =>
+    employee.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getInitials = (name: string) => {
     return name
       .split(" ")
       .map((n) => n[0])
       .join("")
-      .toUpperCase()
-  }
+      .toUpperCase();
+  };
 
   return (
     <SidebarProvider>
@@ -178,13 +140,17 @@ export default function EmployeePage() {
                 <TableRow>
                   <TableHead>Employee Name</TableHead>
                   <TableHead>Position</TableHead>
-                  <TableHead>Division</TableHead>
+                  <TableHead>Departement</TableHead>
                   <TableHead>Status survey</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEmployees.map((employee) => (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                  </TableRow>
+                ) : filteredEmployees.map((employee: Employee) => (
                   <TableRow key={employee.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -195,15 +161,15 @@ export default function EmployeePage() {
                         </Avatar>
                         <div>
                           <div className="font-medium">{employee.name}</div>
-                          <div className="text-sm text-gray-500">{employee.email}</div>
+              
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{employee.position}</TableCell>
-                    <TableCell>{employee.division}</TableCell>
+                    <TableCell>{employee.job_position}</TableCell>
+                    <TableCell>{employee.department}</TableCell>
                     <TableCell>
                       <Badge
-                        className={`${
+                        className={`$ {
                           employee.status === "Active"
                             ? "bg-black text-white hover:bg-gray-800"
                             : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -257,5 +223,5 @@ export default function EmployeePage() {
         />
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
