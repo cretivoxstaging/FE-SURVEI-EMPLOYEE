@@ -1,13 +1,15 @@
 "use client"
 
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { toast } from "sonner" 
+import { useAuth } from "@/hooks/use-auth"
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -16,24 +18,38 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-const Page = () => {
- 
+const DUMMY_EMAIL = "admin@example.com"
+const DUMMY_PASSWORD = "admin123"
+
+export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   })
 
+  const { user, login, isLoading } = useAuth()
+
+  // Redirect ke dashboard kalau sudah login
+  useEffect(() => {
+    if (!isLoading && user?.isLoggedIn) {
+      window.location.replace("/dashboard")
+    }
+  }, [isLoading, user])
+
   const onSubmit = (data: LoginFormValues) => {
-    console.log("Form submitted with data:", data)
-    toast(
-      <div>
-        <div className="font-bold mb-2">Login Attempt</div>
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
+    if (data.email === DUMMY_EMAIL && data.password === DUMMY_PASSWORD) {
+      login(data.email)
+      toast.success("Login successful!")
+      window.location.replace("/dashboard")
+    } else {
+      toast.error("Invalid email or password.")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Loading...</p>
       </div>
     )
   }
@@ -84,5 +100,3 @@ const Page = () => {
     </div>
   )
 }
-
-export default Page

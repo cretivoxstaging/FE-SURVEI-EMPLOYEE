@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useReducer, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,13 +15,16 @@ import { AppreciationChart } from "@/components/appreciation-chart"
 import { ChatInterface } from "@/components/ui/chat-interface"
 import { useEmployee } from "@/hooks/use-employee"
 import { useActiveSurvey } from "@/hooks/use-active-survey"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState("analytics")
   const [isChatOpen, setIsChatOpen] = useState(false)
   const { isActiveSurvey, toggleSurvey } = useActiveSurvey(true)
   const { employees, isLoading, isError, error } = useEmployee()
-
+  const { user, login, logout } = useAuth();
+  
   const toggleChat = () => setIsChatOpen(!isChatOpen)
 
   const totalEmployees = employees?.length || 0
@@ -103,7 +106,6 @@ export default function Page() {
                     <p className="text-xs text-gray-500 mt-1">Out of {totalEmployees} employees</p>
                   </CardContent>
                 </Card>
-
                 <Card>
                   <CardHeader className="flex justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600">Survey Status</CardTitle>
@@ -151,6 +153,21 @@ export default function Page() {
           )}
         </div>
       </SidebarInset>
+      {/* Floating Chat Button and Chat Interface */}
+      {isChatOpen && (
+        <div className="fixed bottom-20 right-4 z-50">
+          <ChatInterface onClose={toggleChat} />
+        </div>
+      )}
+
+      <Button
+        onClick={toggleChat}
+        className="fixed bottom-4 right-4 rounded-full p-4 shadow-lg z-50"
+        size="icon"
+        aria-label={isChatOpen ? "Tutup chat" : "Buka chat"}
+      >
+        {isChatOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+      </Button>
     </SidebarProvider>
   )
 }
