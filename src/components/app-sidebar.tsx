@@ -24,6 +24,7 @@ import {
   DialogFooter,
   DialogTrigger
 } from "@/components/ui/dialog"
+import { useAuth } from "@/hooks/use-auth"
 
 const menuData = {
   general: [
@@ -38,11 +39,12 @@ const menuData = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const [isLogoutOpen, setIsLogoutOpen] = React.useState(false)
+  const { user, login, logout } = useAuth()
 
   const handleLogout = () => {
-    console.log("User logged out")
+    logout()
     setIsLogoutOpen(false)
-    // redirect ke login misal: router.push('/login')
+    window.location.href = "/auth/login"
   }
 
   return (
@@ -113,7 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuButton asChild className="text-gray-600 hover:bg-gray-100 flex items-center gap-2">
                 <a href="/profile">
                   <Users className="size-4" />
-                  <span>Profile</span>
+                  <span>{user?.email}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -122,7 +124,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
                 <DialogTrigger asChild>
                   <SidebarMenuButton asChild className="text-gray-600 hover:bg-gray-100 flex items-center gap-2">
-                    <button>
+                    <button onClick={logout}>
                       <LogOut className="size-4" />
                       <span>Logout</span>
                     </button>
