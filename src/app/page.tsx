@@ -8,38 +8,35 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useSurvey } from "@/context/survey-context"
 import { useRouter } from "next/navigation"
 import { useEmployee } from "@/hooks/use-employee"
-
+import { useSurveyConfig } from "@/context/survey-config-context"
 
 export default function Home() {
   const [open, setOpen] = useState(false)
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
-  const { setSelectedEmployee } = useSurvey()
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("")
+  const { active } = useSurveyConfig() // menggunakan data dari survey config jika diperlukan
   const router = useRouter()
 
-  // Pakai custom hook lo
   const { employees, isLoading } = useEmployee()
 
+  const [selectedEmployee, setSelectedEmployee] = useState<{
+    id: string
+    name: string
+    department: string
+    position: string
+  } | null>(null)  // Menginisialisasi selectedEmployee
+
   const handleStartSurvey = () => {
-    const selected = employees?.find(
-      (emp: { id: number; name: string; job_position: string }) => emp.id === Number(selectedEmployeeId)
-    );
-    if (selected) {
-      setSelectedEmployee({
-        id: String(selected.id),
-        name: selected.name,
-        department: selected.job_position,
-        position: selected.job_position,
-      });
-      router.push("/survey");
+    if (selectedEmployee) {
+      // Mengarahkan ke halaman survey dengan membawa informasi karyawan yang terpilih
+      router.push("/survey")
     }
-  };
+  }
 
   const selectedEmployeeData = employees?.find(
     (emp: { id: number; name: string; job_position: string }) => emp.id === Number(selectedEmployeeId)
-  );
+  )
 
   return (
     <section className="flex flex-col items-center justify-center h-screen px-4">
@@ -82,15 +79,15 @@ export default function Home() {
                         key={emp.id}
                         value={emp.name}
                         onSelect={() => {
-                          const isSame = String(emp.id) === selectedEmployeeId;
-                          setSelectedEmployeeId(isSame ? "" : String(emp.id));
+                          const isSame = String(emp.id) === selectedEmployeeId
+                          setSelectedEmployeeId(isSame ? "" : String(emp.id))
                           setSelectedEmployee(isSame ? null : {
                             id: String(emp.id),
                             name: emp.name,
                             department: emp.job_position,
                             position: emp.job_position,
-                          });
-                          setOpen(false);
+                          })
+                          setOpen(false)
                         }}
                       >
                         <div className="flex flex-col">

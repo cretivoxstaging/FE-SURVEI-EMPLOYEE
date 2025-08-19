@@ -7,13 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Search, Filter, Plus, MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { AppSidebar } from "@/components/app-sidebar"
-import { AddEmployeeModal } from "@/components/add-employee-modal"
-import { EditEmployeeModal } from "@/components/edit-employee-modal"
-import { DeleteConfirmModal } from "@/components/delete-confirm-modal"
+import { Search, Filter } from "lucide-react"
 import { useEmployee } from "@/hooks/use-employee"
 
 interface Employee {
@@ -21,99 +17,52 @@ interface Employee {
   name: string
   email: string
   job_position: string
-  departement: string
+  department: string
+  branch: string
   status: "Active" | "Inactive"
 }
 
 export default function EmployeePage() {
-  const { employees = [], isLoading } = useEmployee();
+  const { employees = [], isLoading } = useEmployee()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [surveyModalOpen, setSurveyModalOpen] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [modals, setModals] = useState({
-    addEmployee: false,
-    editEmployee: false,
-    deleteConfirm: false,
-  });
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const openSurveyModal = (employee: Employee) => {
+    setSelectedEmployee(employee)
+    setSurveyModalOpen(true)
+  }
 
-  const openModal = (modalName: keyof typeof modals) => {
-    setModals((prev) => ({ ...prev, [modalName]: true }));
-  };
-
-  const closeModal = (modalName: keyof typeof modals) => {
-    setModals((prev) => ({ ...prev, [modalName]: false }));
-  };
-
-  // These handlers would need to be updated to work with API if you want to persist changes
-  const handleAddEmployee = (employee: Omit<Employee, "id">) => {
-    // You may want to call an API here instead of local state
-    // For now, just close the modal
-    closeModal("addEmployee");
-  };
-
-  const handleEditEmployee = (updatedEmployee: Omit<Employee, "id">) => {
-    // You may want to call an API here instead of local state
-    closeModal("editEmployee");
-    setSelectedEmployee(null);
-  };
-
-  const handleDeleteEmployee = () => {
-    // You may want to call an API here instead of local state
-    closeModal("deleteConfirm");
-    setSelectedEmployee(null);
-  };
-
-  const openEditModal = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    openModal("editEmployee");
-  };
-
-  const openDeleteModal = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    openModal("deleteConfirm");
-  };
+  const closeSurveyModal = () => {
+    setSurveyModalOpen(false)
+    setSelectedEmployee(null)
+  }
 
   const filteredEmployees = employees.filter((employee: Employee) =>
     employee.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
+  )
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-          </div>
+        {/* Header */}
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger />
+          <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex-1" />
-          <div className="px-4">
-            <div className="w-8 h-8 rounded-full bg-gray-300" />
-          </div>
         </header>
 
         <div className="flex flex-1 flex-col gap-6 p-6">
-          {/* Header Section */}
+          {/* Page Header */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Employee</h1>
-              <p className="text-gray-600">Easily track and manage all of Employee data.</p>
+              <p className="text-gray-600">Easily track and manage all employee data.</p>
             </div>
-            <Button onClick={() => openModal("addEmployee")} className="bg-black text-white hover:bg-gray-800">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Employee
-            </Button>
           </div>
 
-          {/* Search and Filter */}
+          {/* Search & Filter */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -133,65 +82,48 @@ export default function EmployeePage() {
           {/* Employee Table */}
           <div className="bg-white">
             <div className="p-4 border-b">
-              <h3 className="font-semibold">All Employee</h3>
+              <h3 className="font-semibold">All Employees</h3>
             </div>
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gray-200">
                 <TableRow>
+                  <TableHead>No</TableHead>
                   <TableHead>Employee Name</TableHead>
                   <TableHead>Position</TableHead>
-                  <TableHead>Departement</TableHead>
-                  <TableHead>Status survey</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Branch</TableHead>
+                  <TableHead>Status Survey</TableHead>
+                  <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">Loading...</TableCell>
-                  </TableRow>
-                ) : filteredEmployees.map((employee: Employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-gray-200 text-gray-600">
-                            {getInitials(employee.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{employee.name}</div>
-              
-                        </div>
-                      </div>
+                    <TableCell colSpan={7} className="text-center">
+                      Loading...
                     </TableCell>
+                  </TableRow>
+                  //@ts-ignore
+                ) : filteredEmployees.map((employee: Employee, index) => (
+                  <TableRow key={employee.id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{employee.name}</TableCell>
                     <TableCell>{employee.job_position}</TableCell>
                     <TableCell>{employee.department}</TableCell>
+                    <TableCell>{employee.branch}</TableCell>
                     <TableCell>
-                      <Badge
-                        className={`$ {
-                          employee.status === "Active"
-                            ? "bg-black text-white hover:bg-gray-800"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
-                      >
+                      <Badge className={employee.status === "Active" ? "bg-black text-white" : "bg-gray-200 text-gray-700"}>
                         {employee.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditModal(employee)}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openDeleteModal(employee)} className="text-red-600">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        onClick={() => openSurveyModal(employee)}
+                        className="bg-black text-white hover:bg-gray-800"
+                        size="sm"
+                      >
+                        View Survey
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -200,28 +132,36 @@ export default function EmployeePage() {
           </div>
         </div>
 
-        {/* Modals */}
-        <AddEmployeeModal
-          open={modals.addEmployee}
-          onClose={() => closeModal("addEmployee")}
-          onAdd={handleAddEmployee}
-        />
-
-        <EditEmployeeModal
-          open={modals.editEmployee}
-          onClose={() => closeModal("editEmployee")}
-          employee={selectedEmployee}
-          onEdit={handleEditEmployee}
-        />
-
-        <DeleteConfirmModal
-          open={modals.deleteConfirm}
-          onClose={() => closeModal("deleteConfirm")}
-          onConfirm={handleDeleteEmployee}
-          title="Delete Employee"
-          description={`Are you sure you want to delete ${selectedEmployee?.name}? This action cannot be undone.`}
-        />
+        {/* Survey Modal */}
+        <Dialog open={surveyModalOpen} onOpenChange={closeSurveyModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Survey Result - {selectedEmployee?.name}</DialogTitle>
+              <DialogDescription>
+                Here are the survey answers from {selectedEmployee?.name}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 space-y-2">
+              {/* Dummy survey, bisa diganti dengan API */}
+              <div className="border-b py-2">
+                <p className="font-medium">Are you satisfied with your job?</p>
+                <p>Yes</p>
+              </div>
+              <div className="border-b py-2">
+                <p className="font-medium">Do you feel valued?</p>
+                <p>Sometimes</p>
+              </div>
+              <div className="border-b py-2">
+                <p className="font-medium">Would you recommend the company?</p>
+                <p>Yes</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={closeSurveyModal}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
     </SidebarProvider>
-  );
+  )
 }

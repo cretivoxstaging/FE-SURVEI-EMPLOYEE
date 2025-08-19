@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,67 +9,21 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, Edit, Trash2, Hash } from "lucide-react"
-import { AppSidebar } from "@/components/app-sidebar"
 import { AddSectionModal } from "@/components/add-section-modal"
 import { AddQuestionModal } from "@/components/add-question-modal"
 import { EditQuestionModal } from "@/components/edit-question-modal"
 import { DeleteConfirmModal } from "@/components/delete-confirm-modal"
+import { useSurveyConfig } from "@/context/survey-config-context"
+import type { ConfigQuestion } from "@/types/survey"
+import { AppSidebar } from "@/components/app-sidebar"
 
-interface Question {
-  id: string
-  text: string
-  type: "multiple-choice" | "text" | "rating"
-  options?: string[]
-}
-
-interface Section {
-  id: string
-  title: string
-  questions: Question[]
-}
-
-interface Survey {
-  title: string
-  description: string
-  sections: Section[]
+// (Optional) ganti AppSidebar sesuai project kamu
+function AppSidebarStub() {
+  return <aside className="hidden md:block w-64 border-r" />
 }
 
 export default function SurveyConfigurationPage() {
-  const [survey, setSurvey] = useState<Survey>({
-    title: "",
-    description: "",
-    sections: [
-      {
-        id: "section-1",
-        title: "Section 1",
-        questions: [
-          {
-            id: "q1",
-            text: "How would you describe your overall level of job satisfaction?",
-            type: "multiple-choice",
-            options: ["Very Satisfied", "Somewhat Satisfied", "Neutral", "Somewhat Dissatisfied", "Very Dissatisfied"],
-          },
-          {
-            id: "q2",
-            text: "How would you describe your overall level of job satisfaction?",
-            type: "multiple-choice",
-            options: ["Very Satisfied", "Somewhat Satisfied", "Neutral", "Somewhat Dissatisfied", "Very Dissatisfied"],
-          },
-          {
-            id: "q3",
-            text: "How would you describe your overall level of job satisfaction?",
-            type: "multiple-choice",
-            options: [],
-          },
-        ],
-      },
-      {
-        id: "section-2",
-        title: "Section 2",
-        questions: [],
-      },
-    ],
-  })
+  const { draft, setDraft, publish } = useSurveyConfig()
 
   const [modals, setModals] = useState({
     addSection: false,
@@ -80,89 +33,51 @@ export default function SurveyConfigurationPage() {
   })
 
   const [selectedSection, setSelectedSection] = useState<string>("")
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null)
+  const [selectedQuestion, setSelectedQuestion] = useState<ConfigQuestion | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{
     type: "section" | "question"
     id: string
     sectionId?: string
   } | null>(null)
 
-  const openModal = (modalName: keyof typeof modals) => {
-    setModals((prev) => ({ ...prev, [modalName]: true }))
-  }
-
-  const closeModal = (modalName: keyof typeof modals) => {
-    setModals((prev) => ({ ...prev, [modalName]: false }))
-  }
+  const openModal = (name: keyof typeof modals) => setModals((p) => ({ ...p, [name]: true }))
+  const closeModal = (name: keyof typeof modals) => setModals((p) => ({ ...p, [name]: false }))
 
   const handleAddSection = (title: string) => {
-    const newSection: Section = {
-      id: `section-${Date.now()}`,
-      title,
-      questions: [],
-    }
-    setSurvey((prev) => ({
-      ...prev,
-      sections: [...prev.sections, newSection],
-    }))
+    const newSection = { id: `section-${Date.now()}`, title, questions: [] as ConfigQuestion[] }
+    setDraft((prev) => ({ ...prev, sections: [...prev.sections, newSection] }))
     closeModal("addSection")
   }
 
-  const handleAddQuestion = (sectionId: string, question: Omit<Question, "id">) => {
-    const newQuestion: Question = {
-      ...question,
-      id: `q-${Date.now()}`,
-    }
-    setSurvey((prev) => ({
+  const handleAddQuestion = (
+    sectionId: string,
+    q: { text: string; type: "multiple-choice" | "text" | "rating"; options?: string[]; required?: boolean }
+  ) => {
+    const newQuestion: ConfigQuestion = { id: `q-${Date.now()}`, text: q.text, type: q.type, options: q.options, required: q.required }
+    setDraft((prev) => ({
       ...prev,
-      sections: prev.sections.map((section) =>
-        section.id === sectionId ? { ...section, questions: [...section.questions, newQuestion] } : section,
-      ),
+      sections: prev.sections.map((s) => (s.id === sectionId ? { ...s, questions: [...s.questions, newQuestion] } : s)),
     }))
     closeModal("addQuestion")
   }
 
-  const handleEditQuestion = (sectionId: string, questionId: string, updatedQuestion: Omit<Question, "id">) => {
-    setSurvey((prev) => ({
+  const handleEditQuestion = (
+    sectionId: string,
+    questionId: string,
+    updated: { text: string; type: "multiple-choice" | "text" | "rating"; options?: string[]; required?: boolean }
+  ) => {
+    setDraft((prev) => ({
       ...prev,
-      sections: prev.sections.map((section) =>
-        section.id === sectionId
+      sections: prev.sections.map((s) =>
+        s.id === sectionId
           ? {
-              ...section,
-              questions: section.questions.map((q) =>
-                q.id === questionId ? { ...updatedQuestion, id: questionId } : q,
-              ),
+              ...s,
+              questions: s.questions.map((q) => (q.id === questionId ? { ...q, ...updated } : q)),
             }
-          : section,
+          : s
       ),
     }))
     closeModal("editQuestion")
-  }
-
-  const handleDelete = () => {
-    if (!deleteTarget) return
-
-    if (deleteTarget.type === "section") {
-      setSurvey((prev) => ({
-        ...prev,
-        sections: prev.sections.filter((section) => section.id !== deleteTarget.id),
-      }))
-    } else if (deleteTarget.type === "question" && deleteTarget.sectionId) {
-      setSurvey((prev) => ({
-        ...prev,
-        sections: prev.sections.map((section) =>
-          section.id === deleteTarget.sectionId
-            ? {
-                ...section,
-                questions: section.questions.filter((q) => q.id !== deleteTarget.id),
-              }
-            : section,
-        ),
-      }))
-    }
-
-    setDeleteTarget(null)
-    closeModal("deleteConfirm")
   }
 
   const openDeleteModal = (type: "section" | "question", id: string, sectionId?: string) => {
@@ -170,7 +85,23 @@ export default function SurveyConfigurationPage() {
     openModal("deleteConfirm")
   }
 
-  const openEditQuestionModal = (sectionId: string, question: Question) => {
+  const handleDelete = () => {
+    if (!deleteTarget) return
+    if (deleteTarget.type === "section") {
+      setDraft((prev) => ({ ...prev, sections: prev.sections.filter((s) => s.id !== deleteTarget.id) }))
+    } else if (deleteTarget.type === "question" && deleteTarget.sectionId) {
+      setDraft((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === deleteTarget.sectionId ? { ...s, questions: s.questions.filter((q) => q.id !== deleteTarget.id) } : s
+        ),
+      }))
+    }
+    setDeleteTarget(null)
+    closeModal("deleteConfirm")
+  }
+
+  const openEditQuestionModal = (sectionId: string, question: ConfigQuestion) => {
     setSelectedSection(sectionId)
     setSelectedQuestion(question)
     openModal("editQuestion")
@@ -185,19 +116,17 @@ export default function SurveyConfigurationPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+        <header className="flex h-16 items-center gap-2 border-b">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger />
             <Separator orientation="vertical" className="mr-2 h-4" />
           </div>
           <div className="flex-1" />
           <div className="px-4">
-            <div className="w-8 h-8 rounded-full bg-gray-300" />
           </div>
         </header>
 
         <div className="flex flex-1 flex-col gap-6 p-6">
-          {/* Header Section */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Survey Configuration</h1>
@@ -207,11 +136,13 @@ export default function SurveyConfigurationPage() {
               <Button onClick={() => openModal("addSection")} className="bg-black text-white hover:bg-gray-800">
                 Add Section
               </Button>
-              <Button variant="outline">Save Changes</Button>
+              <Button variant="outline">Save Draft</Button>
+              <Button onClick={publish} className="bg-green-600 text-white hover:bg-green-700">
+                Publish & Activate
+              </Button>
             </div>
           </div>
 
-          {/* Survey Overview */}
           <Card>
             <CardHeader>
               <CardTitle>Survey Overview</CardTitle>
@@ -221,8 +152,8 @@ export default function SurveyConfigurationPage() {
                 <Label htmlFor="survey-title">Survey Title</Label>
                 <Input
                   id="survey-title"
-                  value={survey.title}
-                  onChange={(e) => setSurvey((prev) => ({ ...prev, title: e.target.value }))}
+                  value={draft.title}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))}
                   placeholder="Enter survey title"
                 />
               </div>
@@ -230,8 +161,8 @@ export default function SurveyConfigurationPage() {
                 <Label htmlFor="survey-description">Description</Label>
                 <Textarea
                   id="survey-description"
-                  value={survey.description}
-                  onChange={(e) => setSurvey((prev) => ({ ...prev, description: e.target.value }))}
+                  value={draft.description}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="Enter survey description"
                   rows={3}
                 />
@@ -239,8 +170,7 @@ export default function SurveyConfigurationPage() {
             </CardContent>
           </Card>
 
-          {/* Sections */}
-          {survey.sections.map((section) => (
+          {draft.sections.map((section) => (
             <Card key={section.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -265,6 +195,9 @@ export default function SurveyConfigurationPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <p className="font-medium mb-2">{question.text}</p>
+                          <p className="text-xs text-gray-500 mb-2">
+                            Type: {question.type} {question.required ? "• required" : ""}
+                          </p>
                           {question.type === "multiple-choice" && question.options && question.options.length > 0 && (
                             <div className="space-y-1">
                               <p className="text-sm text-gray-600 font-medium">Options:</p>
@@ -316,16 +249,15 @@ export default function SurveyConfigurationPage() {
         <AddQuestionModal
           open={modals.addQuestion}
           onClose={() => closeModal("addQuestion")}
-          onAdd={(question) => handleAddQuestion(selectedSection, question)}
+          onAdd={(q) => handleAddQuestion(selectedSection, q)}
         />
 
         <EditQuestionModal
           open={modals.editQuestion}
           onClose={() => closeModal("editQuestion")}
           question={selectedQuestion}
-          onEdit={(updatedQuestion) => handleEditQuestion(selectedSection, selectedQuestion?.id || "", updatedQuestion)}
+          onEdit={(updated) => selectedQuestion && handleEditQuestion(selectedSection, selectedQuestion.id, updated)}
         />
-
         <DeleteConfirmModal
           open={modals.deleteConfirm}
           onClose={() => closeModal("deleteConfirm")}

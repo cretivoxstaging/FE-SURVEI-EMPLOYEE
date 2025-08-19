@@ -1,74 +1,48 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import * as React from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 
-interface AddSectionModalProps {
+export function AddSectionModal({
+  open,
+  onClose,
+  onAdd,
+}: {
   open: boolean
   onClose: () => void
   onAdd: (title: string) => void
-}
+}) {
+  const [title, setTitle] = React.useState("")
 
-export function AddSectionModal({ open, onClose, onAdd }: AddSectionModalProps) {
-  const [title, setTitle] = useState("")
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (title.trim()) {
-      onAdd(title.trim())
-      setTitle("")
-    }
-  }
-
-  const handleClose = () => {
-    setTitle("")
-    onClose()
-  }
+  React.useEffect(() => {
+    if (!open) setTitle("")
+  }, [open])
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={(v) => (!v ? onClose() : null)}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Section</DialogTitle>
-          <DialogDescription>
-            Create a new section for your survey. You can add questions to it later.
-          </DialogDescription>
+          <DialogTitle>Add Section</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="section-title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="section-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="col-span-3"
-                placeholder="Enter section title"
-                required
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button type="submit">Add Section</Button>
-          </DialogFooter>
-        </form>
+        <div className="space-y-2">
+          <Input
+            placeholder="Section title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (title.trim().length) onAdd(title.trim())
+            }}
+          >
+            Add
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

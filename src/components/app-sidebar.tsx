@@ -1,7 +1,7 @@
-import type * as React from "react"
-import { LayoutDashboard, Users, FileText } from "lucide-react"
-import { usePathname } from "next/navigation" // Import usePathname untuk mendapatkan URL saat ini
-
+'use client'
+import * as React from "react"
+import { LayoutDashboard, Users, FileText, LogOut } from "lucide-react"
+import { usePathname } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -15,31 +15,35 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// Data menu untuk sidebar
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger
+} from "@/components/ui/dialog"
+
 const menuData = {
   general: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      title: "Employee",
-      url: "/employee",
-      icon: Users,
-    },
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Employee", url: "/employee", icon: Users },
   ],
   surveyManagement: [
-    {
-      title: "Survey Configuration",
-      url: "/survey-configuration",
-      icon: FileText,
-    },
+    { title: "Survey Configuration", url: "/survey/configuration", icon: FileText },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname(); // Dapatkan current pathname untuk menentukan item yang aktif
+  const pathname = usePathname()
+  const [isLogoutOpen, setIsLogoutOpen] = React.useState(false)
+
+  const handleLogout = () => {
+    console.log("User logged out")
+    setIsLogoutOpen(false)
+    // redirect ke login misal: router.push('/login')
+  }
 
   return (
     <Sidebar {...props}>
@@ -54,54 +58,93 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-500 text-sm font-medium">General</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuData.general.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.url}  // Periksa apakah pathname saat ini cocok dengan URL item
-                    className={`
-                      ${pathname === item.url ? "bg-black text-white" : "text-gray-600 hover:bg-gray-100"}
-                    `}
-                  >
-                    <a href={item.url}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="flex flex-col justify-between h-full">
+        <div>
+          {/* Sidebar Groups */}
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-gray-500 text-sm font-medium">General</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {menuData.general.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.url}
+                      className={`${pathname === item.url ? "bg-black text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                    >
+                      <a href={item.url}>
+                        <item.icon className="size-4" />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-500 text-sm font-medium">Survey Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuData.surveyManagement.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.url} 
-                    className={`
-                      ${pathname === item.url ? "bg-black text-white" : "text-gray-600 hover:bg-gray-100"}
-                    `}
-                  >
-                    <a className="cursor-pointer" href={item.url}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </a>
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-gray-500 text-sm font-medium">Survey Management</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {menuData.surveyManagement.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.url}
+                      className={`${pathname === item.url ? "bg-black text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                    >
+                      <a href={item.url}>
+                        <item.icon className="size-4" />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
+
+        {/* Profile & Logout */}
+        <div className="p-4 border-t border-gray-200">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild className="text-gray-600 hover:bg-gray-100 flex items-center gap-2">
+                <a href="/profile">
+                  <Users className="size-4" />
+                  <span>Profile</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
+                <DialogTrigger asChild>
+                  <SidebarMenuButton asChild className="text-gray-600 hover:bg-gray-100 flex items-center gap-2">
+                    <button>
+                      <LogOut className="size-4" />
+                      <span>Logout</span>
+                    </button>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                </DialogTrigger>
+
+                <DialogContent className="sm:max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>Confirm Logout</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-2 text-gray-700">
+                    Are you sure you want to logout?
+                  </div>
+                  <DialogFooter className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsLogoutOpen(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleLogout}>Logout</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
       </SidebarContent>
 
       <SidebarRail />

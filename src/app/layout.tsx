@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SurveyProvider } from "@/context/survey-context";
+import { SurveyConfigProvider } from "@/context/survey-config-context";
 import QueryProvider from "@/providers/query-providers";
 
 export const metadata: Metadata = {
@@ -19,9 +19,9 @@ export default function RootLayout({
         className="font-[system-ui,'Segoe_UI',Roboto,Helvetica,Arial,sans-serif,'Apple_Color_Emoji','Segoe_UI_Emoji','Segoe_UI_Symbol'] antialiased"
       >
         <QueryProvider>
-          <SurveyProvider>
+          <SurveyConfigProvider>
             {children}
-          </SurveyProvider>
+          </SurveyConfigProvider>
         </QueryProvider>
       </body>
     </html>
