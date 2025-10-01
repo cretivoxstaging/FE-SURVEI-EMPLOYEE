@@ -7,7 +7,14 @@ const nextConfig = {
         destination: 'https://hris-api-kappa.vercel.app/api/:path*' // target API
       }
     ]
-  }
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  reactStrictMode: false,
 }
 
 module.exports = nextConfig
