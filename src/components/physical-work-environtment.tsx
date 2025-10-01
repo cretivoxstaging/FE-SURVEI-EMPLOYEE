@@ -41,7 +41,7 @@ export function PhysicalWorkEnvironmentChart({ data }: PhysicalWorkEnvironmentCh
                 formatter={(value) => [value, "Responses"]}
                 labelFormatter={(label) => `Category: ${label}`}
               />
-              <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={60} />
+              <Bar dataKey="count" fill="#000000" radius={[4, 4, 0, 0]} maxBarSize={60} />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

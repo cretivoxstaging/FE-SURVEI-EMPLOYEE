@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // app/api/chat/route.ts
 import { genAI } from "@/lib/gemini";
+import { createSystemPrompts } from "@/lib/prompts";
 
 export const runtime = "edge"; // optional, biar low-latency di Vercel Edge
 
@@ -15,8 +15,41 @@ export async function POST(req: Request) {
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContentStream({ contents: [{ role: "user", parts: [{ text: prompt }]}] });
+    // Try different models in order of preference
+    const modelsToTry = [
+      "gemini-2.5-flash",
+      "gemini-1.5-pro",
+      "gemini-1.0-pro",
+      "gemini-pro",
+    ];
+    let model;
+    let result;
+    let lastError;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Trying model: ${modelName}`);
+        model = genAI.getGenerativeModel({ model: modelName });
+        const context = createSystemPrompts.generalChat(prompt);
+        result = await model.generateContentStream({
+          contents: [{ role: "user", parts: [{ text: context }] }],
+        });
+        console.log(`Successfully used model: ${modelName}`);
+        break;
+      } catch (modelError: any) {
+        console.log(`Model ${modelName} failed:`, modelError.message);
+        lastError = modelError;
+        continue;
+      }
+    }
+
+    if (!result) {
+      throw new Error(
+        `All models failed. Last error: ${
+          lastError?.message || "Unknown error"
+        }`
+      );
+    }
 
     const encoder = new TextEncoder();
 
@@ -48,9 +81,12 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: "Failed to generate response" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Failed to generate response" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }

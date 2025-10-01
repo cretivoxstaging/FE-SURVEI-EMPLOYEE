@@ -28,18 +28,18 @@ import { useAuth } from "@/hooks/use-auth"
 
 const menuData = {
   general: [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Employee", url: "/employee", icon: Users },
+    { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
+    { title: "Employee", url: "/admin/employee", icon: Users },
   ],
   surveyManagement: [
-    { title: "Survey Configuration", url: "/survey/configuration", icon: FileText },
+    { title: "Survey Configuration", url: "/admin/survey/configuration", icon: FileText },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const [isLogoutOpen, setIsLogoutOpen] = React.useState(false)
-  const { user, login, logout } = useAuth()
+  const { logout } = useAuth()
 
   const handleLogout = () => {
     logout()
@@ -111,20 +111,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Profile & Logout */}
         <div className="p-4 border-t border-gray-200">
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="text-gray-600 hover:bg-gray-100 flex items-center gap-2">
-                <a href="/profile">
-                  <Users className="size-4" />
-                  <span>{user?.email}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
+            {/* Logout */}
             <SidebarMenuItem>
               <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
                 <DialogTrigger asChild>
                   <SidebarMenuButton asChild className="text-gray-600 hover:bg-gray-100 flex items-center gap-2">
-                    <button onClick={logout}>
+                    <button type="button">
                       <LogOut className="size-4" />
                       <span>Logout</span>
                     </button>

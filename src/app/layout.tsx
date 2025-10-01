@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SurveyConfigProvider } from "@/context/survey-config-context";
 import QueryProvider from "@/providers/query-providers";
+import { SurveyAnswerProvider } from "@/context/survey-answer-context";
 
 export const metadata: Metadata = {
   title: "Annual Survey ",
@@ -20,7 +21,9 @@ export default function RootLayout({
       >
         <QueryProvider>
           <SurveyConfigProvider>
-            {children}
+            <SurveyAnswerProvider>
+              {children}
+            </SurveyAnswerProvider>
           </SurveyConfigProvider>
         </QueryProvider>
       </body>

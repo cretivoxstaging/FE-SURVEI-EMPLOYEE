@@ -23,7 +23,8 @@ interface LabelProps {
   percentage: number
 }
 
-const COLORS = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"]
+// Yellow color scheme for salary chart: Very Bad to Very Good
+const COLORS = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e"]
 
 export function SalarySatisfactionChart({ data }: SalarySatisfactionChartProps) {
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: LabelProps) => {
@@ -87,7 +88,7 @@ export function SalarySatisfactionChart({ data }: SalarySatisfactionChartProps) 
               <Legend
                 verticalAlign="bottom"
                 height={36}
-                formatter={(value, entry) => <span style={{ color: entry.color, fontSize: "12px" }}>{value}</span>}
+                formatter={(value, entry) => <span style={{ color: entry.color, fontSize: "12px" }}>{entry.payload?.category || value}</span>}
               />
             </PieChart>
           </ResponsiveContainer>

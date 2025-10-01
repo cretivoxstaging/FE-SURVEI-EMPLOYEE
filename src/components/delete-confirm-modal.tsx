@@ -9,12 +9,14 @@ export function DeleteConfirmModal({
   onConfirm,
   title,
   description,
+  isLoading = false,
 }: {
   open: boolean
   onClose: () => void
   onConfirm: () => void
   title: string
   description: string
+  isLoading?: boolean
 }) {
   return (
     <Dialog open={open} onOpenChange={(v) => (!v ? onClose() : null)}>
@@ -24,8 +26,10 @@ export function DeleteConfirmModal({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button variant="destructive" onClick={onConfirm}>Delete</Button>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>Cancel</Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? "Deleting..." : "Delete"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

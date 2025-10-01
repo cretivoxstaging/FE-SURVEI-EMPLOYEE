@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -18,40 +18,47 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-const DUMMY_EMAIL = "admin@example.com"
-const DUMMY_PASSWORD = "admin123"
-
 export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   })
 
-  const { user, login, isLoading } = useAuth()
+  const { user, login } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Redirect ke dashboard kalau sudah login
+  // Redirect kalau sudah login
   useEffect(() => {
-    if (!isLoading && user?.isLoggedIn) {
-      window.location.replace("/dashboard")
+    if (user?.isLoggedIn) {
+      window.location.replace("/admin/dashboard")
     }
-  }, [isLoading, user])
+  }, [user])
 
-  const onSubmit = (data: LoginFormValues) => {
-    if (data.email === DUMMY_EMAIL && data.password === DUMMY_PASSWORD) {
-      login(data.email)
-      toast.success("Login successful!")
-      window.location.replace("/dashboard")
-    } else {
-      toast.error("Invalid email or password.")
+  const onSubmit = async (data: LoginFormValues) => {
+    console.log("🔍 Form submitted with data:", data)
+    console.log("🔍 Form validation errors:", form.formState.errors)
+
+    setIsLoading(true)
+
+    try {
+      // Simple login check
+      const success = login(data.email, data.password)
+      console.log("🔍 Login result:", success)
+
+      if (success) {
+        toast.success("Login successful")
+        console.log("🔍 Redirecting to /admin/dashboard")
+        window.location.replace("/admin/dashboard")
+      } else {
+        toast.error("Invalid email or password")
+        console.log("🔍 Login failed")
+      }
+    } catch (error) {
+      console.error("🔍 Login error:", error)
+      toast.error("Login failed. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Loading...</p>
-      </div>
-    )
   }
 
   return (
@@ -62,8 +69,21 @@ export default function LoginPage() {
           <CardTitle className="text-center font-bold text-3xl">Welcome Back</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
+          <div className="text-center text-sm text-gray-600 mb-4">
+            <p>Use these credentials to login:</p>
+            <p><strong>Email:</strong> surveycbn@cbn.com</p>
+            <p><strong>Password:</strong> cretivoxogscondfe</p>
+          </div>
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form
+              onSubmit={(e) => {
+                console.log("🔍 Form submit event triggered")
+                e.preventDefault()
+                form.handleSubmit(onSubmit)(e)
+              }}
+              className="space-y-6"
+            >
               <FormField
                 control={form.control}
                 name="email"
@@ -71,7 +91,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="Email" {...field} />
+                      <Input type="email" placeholder="Email" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -84,14 +104,24 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Password" {...field} />
+                      <Input type="password" placeholder="Password" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full cursor-pointer">
-                Login
+              <Button
+                type="submit"
+                className="w-full cursor-pointer"
+                disabled={isLoading}
+                onClick={() => {
+                  console.log("🔍 Button clicked")
+                  console.log("🔍 Button disabled:", isLoading)
+                  console.log("🔍 Form values:", form.getValues())
+                  console.log("🔍 Form valid:", form.formState.isValid)
+                }}
+              >
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </Form>
