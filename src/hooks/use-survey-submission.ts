@@ -6,9 +6,13 @@ export interface SurveySubmission {
   employeeID: string;
   name: string;
   surveyResult: Array<{
-    section: string;
-    question: string[];
-    answer: string[];
+    date: string;
+    dataResult: Array<{
+      section: string;
+      question: string[];
+      answer: string[];
+    }>;
+    conclutionResult: string;
   }>;
   conclutionResult: string;
 }

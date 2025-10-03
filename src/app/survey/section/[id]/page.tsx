@@ -6,17 +6,17 @@ import { useSection } from "@/hooks/use-sections"
 import { useQuestion } from "@/hooks/use-questions"
 import { useSurveySubmission } from "@/hooks/use-survey-submission"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, Check } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { SurveyStatusGuard } from "@/components/survey-status-guard"
 import { SurveySkeleton, SurveyStepSkeleton } from "@/components/survey-skeleton"
 import { useSurveyProgress } from "@/hooks/use-survey-progress"
+import { useSubmissionCheck } from "@/hooks/use-submission-check"
 import { apiClient } from "@/lib/api-client"
 
 interface Section {
@@ -43,11 +43,39 @@ export default function SurveySectionPage() {
   const { sections, isLoading: sectionsLoading, isError: sectionsError, error: sectionsErrorObj } = useSection()
   const { submitSurvey } = useSurveySubmission()
 
+  // Get selected employee ID from localStorage
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("")
+
+  // Check if selected employee has already submitted this year
+  const {
+    hasSubmittedThisYear,
+    submissionData,
+    isLoading: submissionCheckLoading
+  } = useSubmissionCheck(selectedEmployeeId)
+
+  // Get selected employee ID from localStorage
+  useEffect(() => {
+    const employeeId = localStorage.getItem("selectedEmployee")
+    if (employeeId) {
+      setSelectedEmployeeId(employeeId)
+    }
+  }, [])
+
+  // Auto-redirect to thank you page if already submitted
+  useEffect(() => {
+    if (selectedEmployeeId && hasSubmittedThisYear && submissionData && !submissionCheckLoading) {
+      console.log("🔄 Auto-redirecting to thank you page - user already submitted this year")
+      router.push('/survey/thankyou')
+    }
+  }, [selectedEmployeeId, hasSubmittedThisYear, submissionData, submissionCheckLoading, router])
+
   // Debug logging - sama seperti di survey configuration
   console.log("📊 Sections data:", sections);
   console.log("📊 Sections loading:", sectionsLoading);
   console.log("📊 Sections error:", sectionsError, sectionsErrorObj);
   console.log("🔍 Section ID from params:", sectionId, "Type:", typeof sectionId);
+  console.log("🔍 Selected Employee ID:", selectedEmployeeId);
+  console.log("🔍 Has Submitted This Year:", hasSubmittedThisYear);
 
   // Get current section data - sama seperti di survey configuration
   // Try different comparison methods to handle type mismatches
@@ -93,15 +121,13 @@ export default function SurveySectionPage() {
   const {
     progressData,
     saveAnswer,
-    getAnswer,
     markSectionCompleted,
     updateCurrentSection,
-    isSectionCompleted,
     clearProgress
   } = useSurveyProgress()
 
   // Check if survey is in progress and matches current employee
-  const isSurveyInProgress = progressData && selectedEmployee && progressData.employeeId === selectedEmployee.id
+  const isSurveyInProgress = progressData && selectedEmployee && progressData.employeeId === selectedEmployee?.id
 
   // Get navigation data - sama seperti di survey configuration
   // Use robust comparison like we did for currentSection
@@ -350,8 +376,8 @@ export default function SurveySectionPage() {
         }).replace(',', ' -')
 
       const payload = {
-        employeeID: selectedEmployee.id,
-        name: selectedEmployee.name,
+        employeeID: selectedEmployee?.id || "",
+        name: selectedEmployee?.name || "",
         surveyResult: [
           {
             date: formattedDate,
@@ -359,6 +385,7 @@ export default function SurveySectionPage() {
             conclutionResult: "submit",
           }
         ],
+        conclutionResult: "submit",
       }
 
       console.log("🚀 Submitting survey from progress:", payload)
@@ -441,8 +468,8 @@ export default function SurveySectionPage() {
         }).replace(',', ' -')
 
       const payload = {
-        employeeID: selectedEmployee.id,
-        name: selectedEmployee.name,
+        employeeID: selectedEmployee?.id || "",
+        name: selectedEmployee?.name || "",
         surveyResult: [
           {
             date: formattedDate,
@@ -450,6 +477,7 @@ export default function SurveySectionPage() {
             conclutionResult: "submit",
           }
         ],
+        conclutionResult: "submit",
       }
 
       console.log("🚀 Submitting survey from localStorage:", payload)
@@ -616,8 +644,8 @@ export default function SurveySectionPage() {
                 <div className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border-2 border-gray-200">
                   <div className="w-2 h-2 bg-black rounded-full"></div>
                   <span className="text-sm font-bold text-black">
-                    Survey for: <span className="font-bold text-black">{selectedEmployee.name}</span>
-                    <span className="text-gray-600 ml-1">({selectedEmployee.position})</span>
+                    Survey for: <span className="font-bold text-black">{selectedEmployee?.name || "Unknown"}</span>
+                    <span className="text-gray-600 ml-1">({selectedEmployee?.position || "Unknown"})</span>
                   </span>
                 </div>
               )}
