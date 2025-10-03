@@ -28,6 +28,9 @@ const COLORS = ["#eab308", "#ef4444"]
 
 export function AppreciationChart({ data }: AppreciationChartProps) {
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: LabelProps) => {
+    // Don't show label if percentage is 0
+    if (percentage === 0) return null
+
     const RADIAN = Math.PI / 180
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5
     const x = cx + radius * Math.cos(-midAngle * RADIAN)

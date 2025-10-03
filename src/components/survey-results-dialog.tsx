@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FileText, Calendar, User, CheckCircle, BarChart3, MessageSquare, Type, Star, Hash } from "lucide-react"
-import { useSurveyResultById } from "@/hooks/use-survey-results"
+import { useSurveyResultById, SurveyResult } from "@/hooks/use-survey-results"
 import { useQuestions } from "@/hooks/use-questions"
 import { useSection } from "@/hooks/use-sections"
 import { SurveyScoring } from "@/components/survey-scoring"
@@ -129,12 +129,32 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
     if (!surveyData?.surveyResult) return []
 
     console.log("🔍 Processing survey results:", {
-      totalSections: surveyData.surveyResult.length,
+      surveyData: surveyData,
+      surveyResultType: typeof surveyData.surveyResult,
+      isArray: Array.isArray(surveyData.surveyResult),
+      totalSections: Array.isArray(surveyData.surveyResult) ? surveyData.surveyResult.length : 0,
       questionMapSize: questionMap.size,
       sectionMapSize: sectionMap.size,
     })
 
-    return surveyData.surveyResult.map((sectionResult, sectionIndex) => {
+    // Handle new data format - surveyResult is an array of submissions
+    let surveyResults: SurveyResult[] = []
+
+    if (Array.isArray(surveyData.surveyResult)) {
+      // Get the most recent submission (last one in the array)
+      const latestSubmission = surveyData.surveyResult[surveyData.surveyResult.length - 1]
+      if (latestSubmission?.dataResult && Array.isArray(latestSubmission.dataResult)) {
+        surveyResults = latestSubmission.dataResult
+        console.log("🔍 Using latest submission data:", latestSubmission.date)
+      }
+    }
+
+    if (!Array.isArray(surveyResults) || surveyResults.length === 0) {
+      console.log("❌ No valid survey results found:", surveyResults)
+      return []
+    }
+
+    return surveyResults.map((sectionResult, sectionIndex) => {
       const sectionId = sectionResult.section
       const section = sectionMap.get(sectionId)
 
@@ -143,9 +163,14 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
         sectionTitle: section?.title,
         questionIds: sectionResult.question,
         answers: sectionResult.answer,
+        sectionResult: sectionResult,
       })
 
-      const enhancedQuestions = sectionResult.question.map((questionId, index) => {
+      // Ensure question and answer arrays exist and have the same length
+      const questions = Array.isArray(sectionResult.question) ? sectionResult.question : []
+      const answers = Array.isArray(sectionResult.answer) ? sectionResult.answer : []
+
+      const enhancedQuestions = questions.map((questionId, index) => {
         // Try multiple ways to find the question
         let question =
           questionMap.get(String(questionId)) ||
@@ -185,7 +210,7 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
           }
         }
 
-        const answer = sectionResult.answer[index] || "No answer provided"
+        const answer = answers[index] || "No answer provided"
 
         console.log(`🔍 Processing question ${index}:`, {
           questionId,
@@ -484,7 +509,22 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
               </TabsContent>
 
               <TabsContent value="scoring" className="mt-6">
-                <SurveyScoring surveyData={surveyData} />
+                <SurveyScoring surveyData={surveyData as {
+                  id: number;
+                  createdAt: string;
+                  employeeID: string;
+                  name: string;
+                  surveyResult: Array<{
+                    date: string;
+                    dataResult: Array<{
+                      answer: string[];
+                      section: string;
+                      question: string[];
+                    }>;
+                    conclutionResult: string;
+                  }>;
+                  conclutionResult: string;
+                }} />
               </TabsContent>
             </Tabs>
           )}

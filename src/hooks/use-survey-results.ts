@@ -9,12 +9,18 @@ export interface SurveyResult {
   question: string[];
 }
 
+export interface SurveySubmission {
+  date: string;
+  dataResult: SurveyResult[];
+  conclutionResult: string;
+}
+
 export interface SurveyResponse {
   id: number;
   createdAt: string;
   employeeID: string;
   name: string;
-  surveyResult: SurveyResult[];
+  surveyResult: SurveySubmission[];
   conclutionResult: string;
 }
 

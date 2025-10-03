@@ -16,7 +16,7 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { SurveyStatusGuard } from "@/components/survey-status-guard"
 import { SurveySkeleton, SurveyStepSkeleton } from "@/components/survey-skeleton"
-import { useYearlySubmissionCheck } from "@/hooks/use-yearly-submission-check"
+import { useSurveyProgress } from "@/hooks/use-survey-progress"
 import { apiClient } from "@/lib/api-client"
 
 interface Section {
@@ -89,16 +89,19 @@ export default function SurveySectionPage() {
     position: string
   } | null>(null)
 
-  // Check if selected employee has already submitted this year
-  const { hasSubmittedThisYear: apiHasSubmitted, submissionData, isLoading: submissionCheckLoading } = useYearlySubmissionCheck(selectedEmployee?.id || "")
+  // Survey progress management
+  const {
+    progressData,
+    saveAnswer,
+    getAnswer,
+    markSectionCompleted,
+    updateCurrentSection,
+    isSectionCompleted,
+    clearProgress
+  } = useSurveyProgress()
 
-  // Auto-redirect to thank you page if already submitted
-  useEffect(() => {
-    if (selectedEmployee?.id && apiHasSubmitted && submissionData && !submissionCheckLoading) {
-      console.log("🔄 Auto-redirecting to thank you page - user already submitted this year")
-      router.push('/survey/thankyou')
-    }
-  }, [selectedEmployee?.id, apiHasSubmitted, submissionData, submissionCheckLoading, router])
+  // Check if survey is in progress and matches current employee
+  const isSurveyInProgress = progressData && selectedEmployee && progressData.employeeId === selectedEmployee.id
 
   // Get navigation data - sama seperti di survey configuration
   // Use robust comparison like we did for currentSection
@@ -124,19 +127,42 @@ export default function SurveySectionPage() {
   // Load employee from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("selectedEmployee")
-    if (saved) setSelectedEmployee(JSON.parse(saved))
-  }, [])
-
-  // Load answers from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem(`answers-${sectionId}`)
-    console.log("🔍 Loading answers from localStorage:", { sectionId, saved })
     if (saved) {
-      const parsedAnswers = JSON.parse(saved)
-      console.log("🔍 Parsed answers:", parsedAnswers)
-      setAnswers(parsedAnswers)
+      const employee = JSON.parse(saved)
+      setSelectedEmployee(employee)
+
+      // Update current section in progress if survey is in progress
+      if (progressData && progressData.employeeId === employee.id) {
+        updateCurrentSection(sectionId)
+      }
     }
-  }, [sectionId])
+  }, [sectionId]) // Removed progressData and updateCurrentSection from dependencies
+
+  // Load answers from survey progress or localStorage fallback
+  useEffect(() => {
+    if (isSurveyInProgress && progressData) {
+      // Load answers from survey progress
+      const progressAnswers = Object.keys(progressData.answers).reduce((acc, questionId) => {
+        // Only load answers for current section
+        if (questions?.some(q => q.id === questionId)) {
+          acc[questionId] = progressData.answers[questionId]
+        }
+        return acc
+      }, {} as Record<string, string | string[]>)
+
+      console.log("🔍 Loading answers from survey progress:", { sectionId, progressAnswers })
+      setAnswers(progressAnswers)
+    } else {
+      // Fallback to localStorage
+      const saved = localStorage.getItem(`answers-${sectionId}`)
+      console.log("🔍 Loading answers from localStorage:", { sectionId, saved })
+      if (saved) {
+        const parsedAnswers = JSON.parse(saved)
+        console.log("🔍 Parsed answers:", parsedAnswers)
+        setAnswers(parsedAnswers)
+      }
+    }
+  }, [sectionId, questions]) // Removed isSurveyInProgress and progressData from dependencies
 
   // Loading states - sama seperti di survey configuration
   if (sectionsLoading) {
@@ -206,9 +232,16 @@ export default function SurveySectionPage() {
     console.log("🔍 handleAnswerChange called:", { questionId, value, sectionId })
     const newAnswers = { ...answers, [questionId]: value }
     setAnswers(newAnswers)
-    localStorage.setItem(`answers-${sectionId}`, JSON.stringify(newAnswers))
+
+    // Save to survey progress if in progress, otherwise save to localStorage
+    if (isSurveyInProgress) {
+      saveAnswer(questionId, value)
+    } else {
+      localStorage.setItem(`answers-${sectionId}`, JSON.stringify(newAnswers))
+    }
+
     console.log("🔍 Updated answers:", newAnswers)
-    console.log("🔍 Saved to localStorage:", `answers-${sectionId}`, JSON.stringify(newAnswers))
+    console.log("🔍 Saved to:", isSurveyInProgress ? "survey progress" : "localStorage")
   }
 
   // Navigation handlers
@@ -225,48 +258,66 @@ export default function SurveySectionPage() {
       nextSection,
       currentIndex,
       totalSections,
-      hasNextSection: !!nextSection
+      hasNextSection: !!nextSection,
+      isSurveyInProgress
     });
+
+    // Mark current section as completed if survey is in progress
+    if (isSurveyInProgress) {
+      markSectionCompleted(sectionId)
+    }
 
     if (nextSection) {
       console.log("🚀 Navigating to next section:", nextSection.id);
+
+      // Update current section in progress
+      if (isSurveyInProgress) {
+        updateCurrentSection(nextSection.id)
+      }
+
       router.push(`/survey/section/${nextSection.id}`)
     } else {
       // Finish survey - submit all answers
       if (!selectedEmployee) return
 
-      // Fetch all questions first using apiClient
-      let allQuestions = []
-      try {
-        const response = await apiClient.get("/api/v1/question")
-        const questionsData = response.data
-        allQuestions = questionsData?.data || questionsData || []
-        console.log("🔍 All questions fetched:", allQuestions)
-      } catch (error) {
-        console.error("Error fetching questions:", error)
+      // If survey is in progress, use progress data
+      if (isSurveyInProgress && progressData) {
+        await submitFinalSurvey(progressData)
+      } else {
+        // Fallback to localStorage method
+        await submitFinalSurveyFromLocalStorage()
       }
+    }
+  }
+
+  // Submit final survey using progress data
+  const submitFinalSurvey = async (progressData: any) => {
+    try {
+      // Fetch all questions first
+      const response = await apiClient.get("/api/v1/question")
+      const questionsData = response.data
+      const allQuestions = questionsData?.data || questionsData || []
 
       const surveyResult = sections?.map((section: Section) => {
-        const sectionAnswers = JSON.parse(localStorage.getItem(`answers-${section.id}`) || "{}")
-        console.log("🔍 Section answers for", section.title, ":", sectionAnswers)
+        // Get answers for this section from progress data
+        const sectionAnswers = Object.keys(progressData.answers).reduce((acc, questionId) => {
+          const question = allQuestions.find((q: any) => q.id === parseInt(questionId))
+          if (question && (question.sectionTitle === section.title || String(question.sectionId) === String(section.id))) {
+            acc[questionId] = progressData.answers[questionId]
+          }
+          return acc
+        }, {} as Record<string, string | string[]>)
 
         // Find questions for this section
-        const sectionQuestions = allQuestions.filter((q: { sectionTitle?: string; sectionId?: number }) => {
+        const sectionQuestions = allQuestions.filter((q: any) => {
           return q.sectionTitle === section.title || String(q.sectionId) === String(section.id)
         })
 
-        console.log("🔍 Section questions for", section.title, ":", sectionQuestions)
-
-        // Map answers using question IDs from the questions data
-        const questionIds = sectionQuestions.map((q: { id: number }) => String(q.id))
+        // Map answers using question IDs
+        const questionIds = sectionQuestions.map((q: any) => String(q.id))
         const answers = questionIds.map((qId: string) => {
-          const answer = sectionAnswers[qId]
-          console.log(`🔍 Answer for question ${qId}:`, answer)
-          return answer || ""
+          return sectionAnswers[qId] || ""
         })
-
-        console.log("🔍 Mapped question IDs:", questionIds)
-        console.log("🔍 Mapped answers:", answers)
 
         return {
           section: section.title,
@@ -275,34 +326,154 @@ export default function SurveySectionPage() {
         }
       })
 
+      // Get selected date from localStorage
+      const selectedDate = localStorage.getItem("selectedSurveyDate")
+      const currentDate = new Date()
+      const formattedDate = selectedDate
+        ? new Date(selectedDate).toLocaleString('en-US', {
+          timeZone: 'Asia/Jakarta',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(',', ' -')
+        : currentDate.toLocaleString('en-US', {
+          timeZone: 'Asia/Jakarta',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(',', ' -')
+
       const payload = {
         employeeID: selectedEmployee.id,
         name: selectedEmployee.name,
-        surveyResult: surveyResult || [],
-        conclutionResult: "submit",
+        surveyResult: [
+          {
+            date: formattedDate,
+            dataResult: surveyResult || [],
+            conclutionResult: "submit",
+          }
+        ],
       }
 
-      console.log("🚀 Submitting survey:", payload)
-      console.log("📊 Survey Result Details:", {
-        employeeID: payload.employeeID,
-        name: payload.name,
-        surveyResultCount: payload.surveyResult.length,
-        surveyResult: payload.surveyResult,
-        conclutionResult: payload.conclutionResult
-      })
+      console.log("🚀 Submitting survey from progress:", payload)
 
       submitSurvey.mutate(payload, {
         onSuccess: (res) => {
           console.log("Survey submitted successfully:", res)
-          alert("Survey berhasil dikirim!")
+          // Clear progress data after successful submission
+          clearProgress()
           // Clear localStorage
-          sections?.forEach((s: Section) => localStorage.removeItem(`answers-${s.id}`))
-          router.push("/survey/thankyou")
+          sections?.forEach((section: Section) => {
+            localStorage.removeItem(`answers-${section.id}`)
+          })
+          localStorage.removeItem("selectedEmployee")
+          localStorage.removeItem("selectedSurveyDate")
+
+          router.push('/survey/thankyou')
         },
-        onError: (err: Error) => {
-          alert("❌ Failed to submit survey: " + err.message)
-        },
+        onError: (error) => {
+          console.error("Survey submission error:", error)
+          alert("Error submitting survey: " + error.message)
+        }
       })
+    } catch (error) {
+      console.error("Error preparing survey submission:", error)
+      alert("Error preparing survey submission: " + error)
+    }
+  }
+
+  // Fallback method for localStorage-based submission
+  const submitFinalSurveyFromLocalStorage = async () => {
+    try {
+      // Fetch all questions first
+      const response = await apiClient.get("/api/v1/question")
+      const questionsData = response.data
+      const allQuestions = questionsData?.data || questionsData || []
+
+      const surveyResult = sections?.map((section: Section) => {
+        const sectionAnswers = JSON.parse(localStorage.getItem(`answers-${section.id}`) || "{}")
+
+        // Find questions for this section
+        const sectionQuestions = allQuestions.filter((q: any) => {
+          return q.sectionTitle === section.title || String(q.sectionId) === String(section.id)
+        })
+
+        // Map answers using question IDs
+        const questionIds = sectionQuestions.map((q: any) => String(q.id))
+        const answers = questionIds.map((qId: string) => {
+          return sectionAnswers[qId] || ""
+        })
+
+        return {
+          section: section.title,
+          question: questionIds,
+          answer: answers,
+        }
+      })
+
+      // Get selected date from localStorage
+      const selectedDate = localStorage.getItem("selectedSurveyDate")
+      const currentDate = new Date()
+      const formattedDate = selectedDate
+        ? new Date(selectedDate).toLocaleString('en-US', {
+          timeZone: 'Asia/Jakarta',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(',', ' -')
+        : currentDate.toLocaleString('en-US', {
+          timeZone: 'Asia/Jakarta',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(',', ' -')
+
+      const payload = {
+        employeeID: selectedEmployee.id,
+        name: selectedEmployee.name,
+        surveyResult: [
+          {
+            date: formattedDate,
+            dataResult: surveyResult || [],
+            conclutionResult: "submit",
+          }
+        ],
+      }
+
+      console.log("🚀 Submitting survey from localStorage:", payload)
+
+      submitSurvey.mutate(payload, {
+        onSuccess: (res) => {
+          console.log("Survey submitted successfully:", res)
+          // Clear localStorage
+          sections?.forEach((section: Section) => {
+            localStorage.removeItem(`answers-${section.id}`)
+          })
+          localStorage.removeItem("selectedEmployee")
+          localStorage.removeItem("selectedSurveyDate")
+
+          router.push('/survey/thankyou')
+        },
+        onError: (error) => {
+          console.error("Survey submission error:", error)
+          alert("Error submitting survey: " + error.message)
+        }
+      })
+    } catch (error) {
+      console.error("Error preparing survey submission:", error)
+      alert("Error preparing survey submission: " + error)
     }
   }
 
@@ -397,169 +568,142 @@ export default function SurveySectionPage() {
     }
   }
 
-  // Show loading state while checking submission status
-  if (selectedEmployee && submissionCheckLoading) {
-    return (
-      <SurveyStatusGuard>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking Submission Status</h2>
-            <p className="text-gray-600">Please wait while we verify your survey status...</p>
-          </div>
-        </div>
-      </SurveyStatusGuard>
-    )
-  }
 
-  // If employee has already submitted this year, show Google Form style completion page
-  if (selectedEmployee && apiHasSubmitted && submissionData) {
-    return (
-      <SurveyStatusGuard>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-            {/* Google Form style icon */}
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-
-            {/* Title */}
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Survey Already Completed
-            </h1>
-
-            {/* Message */}
-            <p className="text-gray-600 mb-6">
-              <strong>{selectedEmployee.name}</strong> has already completed the Annual Survey for <strong>{submissionData.year}</strong>.
-            </p>
-
-            {/* Submission details */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-600 mb-2">
-                <strong>Submitted on:</strong>
-              </p>
-              <p className="text-sm font-medium text-gray-800">
-                {submissionData.createdAt}
-              </p>
-            </div>
-
-            {/* Google Form style message */}
-            <div className="border-t pt-6">
-              <p className="text-sm text-gray-500 mb-4">
-                This form can only be submitted once per year.
-              </p>
-              <p className="text-sm text-gray-500 mb-6">
-                You can participate again next year.
-              </p>
-
-              {/* Action buttons */}
-              <div className="space-y-3">
-                <Button
-                  onClick={() => router.push('/survey')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Select Different Employee
-                </Button>
-                <Button
-                  onClick={() => router.push('/')}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Back to Home
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </SurveyStatusGuard>
-    )
-  }
 
   return (
     <SurveyStatusGuard>
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
+      <div className="min-h-screen bg-white">
+        {/* Header dengan black and white design */}
+        <div className="relative bg-white border-b-2 border-black">
+          <div className="relative max-w-6xl mx-auto px-4 py-8">
+            <div className="flex items-center justify-between mb-6">
               <Button
                 variant="outline"
                 onClick={() => router.push('/survey')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border-2 border-black hover:border-gray-600 bg-white rounded-xl font-medium transition-all duration-200 hover:shadow-md"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Back to Survey
               </Button>
-              <div className="text-sm text-gray-500">
-                Section {currentIndex + 1} of {totalSections}
+
+              {/* Progress indicator */}
+              <div className="flex items-center gap-3">
+                <div className="bg-white rounded-xl px-4 py-2 border-2 border-black">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-black rounded-full"></div>
+                    <span className="text-sm font-bold text-black">
+                      Section {currentIndex + 1} of {totalSections}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden border border-black">
+                  <div
+                    className="h-full bg-black rounded-full transition-all duration-500"
+                    style={{ width: `${((currentIndex + 1) / totalSections) * 100}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
 
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {currentSection.title}
-            </h1>
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl font-bold text-black mb-4 tracking-tight">
+                {currentSection.title}
+              </h1>
 
-            {selectedEmployee && (
-              <p className="text-gray-600">
-                Survey for: <span className="font-medium">{selectedEmployee.name}</span>
-                <span className="text-gray-400 ml-2">({selectedEmployee.position})</span>
-              </p>
-            )}
+              {selectedEmployee && (
+                <div className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border-2 border-gray-200">
+                  <div className="w-2 h-2 bg-black rounded-full"></div>
+                  <span className="text-sm font-bold text-black">
+                    Survey for: <span className="font-bold text-black">{selectedEmployee.name}</span>
+                    <span className="text-gray-600 ml-1">({selectedEmployee.position})</span>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
+        </div>
 
-          {/* Questions */}
-          <div className="space-y-6">
+        {/* Questions dengan black and white design */}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="space-y-8">
             {questionsLoading ? (
               <SurveyStepSkeleton />
             ) : questions && questions.length > 0 ? (
               questions.map((question, index) => (
-                <Card key={question.id}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      {index + 1}. {question.text}
-                      {question.required && <span className="text-red-500 ml-1">*</span>}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {renderQuestion(question)}
-                  </CardContent>
-                </Card>
+                <div key={question.id} className="group">
+                  <div className="bg-white rounded-2xl shadow-2xl border-2 border-black p-8 hover:shadow-2xl transition-all duration-300">
+                    <div className="flex items-start gap-4 mb-6">
+                      <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-black mb-2 leading-relaxed">
+                          {question.text}
+                          {question.required && (
+                            <span className="text-black ml-2 text-lg">*</span>
+                          )}
+                        </h3>
+                        <div className="mt-4">
+                          {renderQuestion(question)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))
             ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-gray-500">No questions found for this section.</p>
-                  <Button
-                    onClick={() => router.push('/survey')}
-                    className="mt-4"
-                  >
-                    Back to Survey
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="bg-white rounded-2xl shadow-2xl border-2 border-black p-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-black mb-3">No questions found</h3>
+                <p className="text-gray-600 mb-6">This section doesn&apos;t have any questions yet.</p>
+                <Button
+                  onClick={() => router.push('/survey')}
+                  className="bg-black hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border-2 border-black"
+                >
+                  Back to Survey
+                </Button>
+              </div>
             )}
           </div>
 
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
+          {/* Navigation dengan black and white design */}
+          <div className="flex justify-between items-center mt-12">
             <Button
               variant="outline"
               onClick={handlePrevious}
               disabled={currentIndex === 0}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 border-2 border-black hover:border-gray-600 bg-white rounded-xl font-medium py-3 px-6 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
             </Button>
 
+            <div className="text-center">
+              <div className="text-sm text-gray-600 mb-2">
+                {currentIndex + 1} of {totalSections} sections
+              </div>
+              <div className="w-32 h-1 bg-gray-200 rounded-full overflow-hidden mx-auto border border-black">
+                <div
+                  className="h-full bg-black rounded-full transition-all duration-500"
+                  style={{ width: `${((currentIndex + 1) / totalSections) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+
             <Button
               onClick={handleNext}
               disabled={submitSurvey.isPending}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
             >
               {submitSurvey.isPending ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
                   {currentIndex === totalSections - 1 ? 'Submitting...' : 'Loading...'}
                 </>
               ) : (

@@ -20,11 +20,19 @@ interface SurveySubmission {
   createdAt: string;
   employeeID: string;
   name: string;
-  surveyResult: unknown[];
+  surveyResult: {
+    date: string;
+    dataResult: {
+      answer: string[];
+      section: string;
+      question: string[];
+    }[];
+    conclutionResult: string;
+  }[];
   conclutionResult: string;
 }
 
-interface SurveyResultsResponse {
+interface SurveyApiResponse {
   message: string;
   data: SurveySubmission[];
 }
@@ -37,10 +45,10 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
     data: surveyResults,
     isLoading,
     isError,
-  } = useQuery<SurveyResultsResponse>({
+  } = useQuery<SurveyApiResponse>({
     queryKey: ["employee-yearly-submissions", employeeId],
     queryFn: async () => {
-      const response = await apiClient.get("/api/v1/survey-result");
+      const response = await apiClient.get("/api/v1/survey");
       return response.data;
     },
     enabled: !!employeeId,
@@ -87,6 +95,7 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
         employeeID: s.employeeID,
         employeeIDType: typeof s.employeeID,
         name: s.name,
+        surveyResultCount: s.surveyResult?.length || 0,
       })),
     });
 
@@ -99,6 +108,7 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
         employeeID: s.employeeID,
         employeeIDType: typeof s.employeeID,
         name: s.name,
+        surveyResultCount: s.surveyResult?.length || 0,
       }))
     );
 
@@ -128,11 +138,27 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
     // Check if any submission is from current year
     const currentYearSubmission = employeeSubmissions.find(
       (survey: SurveySubmission) => {
-        if (!survey.createdAt) return false;
+        // Check both old and new date formats
+        let dateToCheck = survey.createdAt;
+
+        // If we have surveyResult with date field, use the latest submission date
+        if (
+          survey.surveyResult &&
+          Array.isArray(survey.surveyResult) &&
+          survey.surveyResult.length > 0
+        ) {
+          const latestSubmission =
+            survey.surveyResult[survey.surveyResult.length - 1];
+          if (latestSubmission?.date) {
+            dateToCheck = latestSubmission.date;
+          }
+        }
+
+        if (!dateToCheck) return false;
 
         try {
           // Parse DD/MM/YYYY - HH:MM format
-          const dateMatch = survey.createdAt.match(
+          const dateMatch = dateToCheck.match(
             /(\d{2})\/(\d{2})\/(\d{4}) - (\d{2}):(\d{2})/
           );
           if (!dateMatch) return false;
@@ -142,7 +168,7 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
 
           console.log("🔍 Year Check Debug:", {
             employeeId,
-            createdAt: survey.createdAt,
+            createdAt: dateToCheck,
             parsedYear: year,
             currentYear,
             isCurrentYear,
@@ -151,7 +177,7 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
 
           return isCurrentYear;
         } catch (error) {
-          console.warn("Error parsing survey date:", survey.createdAt, error);
+          console.warn("Error parsing survey date:", dateToCheck, error);
           return false;
         }
       }
@@ -162,7 +188,14 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
       submissionData: currentYearSubmission
         ? {
             id: currentYearSubmission.id,
-            createdAt: currentYearSubmission.createdAt,
+            createdAt:
+              currentYearSubmission.surveyResult &&
+              Array.isArray(currentYearSubmission.surveyResult) &&
+              currentYearSubmission.surveyResult.length > 0
+                ? currentYearSubmission.surveyResult[
+                    currentYearSubmission.surveyResult.length - 1
+                  ]?.date || currentYearSubmission.createdAt
+                : currentYearSubmission.createdAt,
             year: currentYear,
           }
         : null,

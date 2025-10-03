@@ -42,7 +42,7 @@ export default function Page() {
   // Get yearly survey data
   const { yearlyData, currentYearData, previousYearData, growthMetrics, isLoading: yearlyLoading } = useYearlySurveyData(employees || [])
 
-  const totalEmployees = employees?.length || 0
+  const totalEmployees = employees?.filter(emp => emp.employee_status !== "Resign").length || 0
   const surveyStats = getOverallStats()
   const surveyResponses = surveyStats.totalResponses
 

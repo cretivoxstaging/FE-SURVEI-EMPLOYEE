@@ -22,13 +22,22 @@ interface Employee {
   department: string
   branch: string
   status: "Active" | "Inactive"
+  employee_status?: string
   hasSurvey?: boolean
   surveyResult?: {
     id: number
     createdAt: string
     employeeID: string
     name: string
-    surveyResult: { question: string; answer: string }[]
+    surveyResult: {
+      date: string
+      dataResult: {
+        answer: string[]
+        section: string
+        question: string[]
+      }[]
+      conclutionResult: string
+    }[]
     conclutionResult: string
   } | null
 }
@@ -47,10 +56,12 @@ export default function EmployeePage() {
 
   // Get available years for the year filter
   const availableYears = employeesWithSurvey
-    .filter(emp => emp.hasSurvey && emp.surveyResult && emp.surveyResult.createdAt)
+    .filter(emp => emp.hasSurvey && emp.surveyResult && Array.isArray(emp.surveyResult.surveyResult))
     .map(emp => {
       try {
-        const createdAt = emp.surveyResult!.createdAt
+        // Get the latest submission date
+        const latestSubmission = emp.surveyResult!.surveyResult[emp.surveyResult!.surveyResult.length - 1]
+        const createdAt = latestSubmission?.date || emp.surveyResult!.createdAt
         // Parse DD/MM/YYYY - HH:MM format
         const dateMatch = createdAt.match(/(\d{2})\/(\d{2})\/(\d{4}) - (\d{2}):(\d{2})/)
         if (dateMatch) {
@@ -72,28 +83,44 @@ export default function EmployeePage() {
       if (getAllSurveyResults.data?.data) {
         // Survey data is available
         const surveyResults = getAllSurveyResults.data.data
-        const merged = employees.map((emp: Employee) => {
-          // Find survey result for this employee
-          const surveyResult = surveyResults.find(
-            (survey: { employeeID: string }) => survey.employeeID === String(emp.id)
-          )
-          console.log(`🔍 Employee ${emp.id} (${emp.name}) - Survey Result:`, surveyResult)
-          return {
-            ...emp,
-            hasSurvey: !!surveyResult,
-            surveyResult: surveyResult || null,
-          }
-        })
+
+        const merged = employees
+          ?.filter((emp: Employee) => emp.employee_status !== "Resign") // Filter out resigned employees
+          ?.map((emp: Employee) => {
+            // Find survey result for this employee
+            const surveyResult = surveyResults.find(
+              (survey: { employeeID: string }) => survey.employeeID === String(emp.id)
+            )
+
+            // Check if employee has survey data
+            const hasSurvey = surveyResult &&
+              Array.isArray(surveyResult.surveyResult) &&
+              surveyResult.surveyResult.length > 0
+
+            console.log(`🔍 Employee ${emp.id} (${emp.name}) - Survey Result:`, {
+              hasSurvey,
+              surveyResult: surveyResult?.surveyResult,
+              latestSubmission: surveyResult?.surveyResult?.[surveyResult.surveyResult.length - 1]
+            })
+
+            return {
+              ...emp,
+              hasSurvey,
+              surveyResult: hasSurvey ? surveyResult : null,
+            }
+          })
         console.log("📊 Merged employees with survey data:", merged)
         setEmployeesWithSurvey(merged)
       } else {
         // No survey data available (either loading failed or no surveys exist yet)
         // Set all employees as no survey so they still appear in the table
-        const merged = employees.map((emp: Employee) => ({
-          ...emp,
-          hasSurvey: false,
-          surveyResult: null,
-        }))
+        const merged = employees
+          .filter((emp: Employee) => emp.employee_status !== "Resign") // Filter out resigned employees
+          .map((emp: Employee) => ({
+            ...emp,
+            hasSurvey: false,
+            surveyResult: null,
+          }))
         console.log("📊 No survey results available, setting all employees as no survey:", merged)
         setEmployeesWithSurvey(merged)
       }
@@ -111,12 +138,14 @@ export default function EmployeePage() {
     }
 
     // If employee has no survey, only show if no year filter applied
-    if (!employee.hasSurvey || !employee.surveyResult || !employee.surveyResult.createdAt) {
+    if (!employee.hasSurvey || !employee.surveyResult || !Array.isArray(employee.surveyResult.surveyResult) || employee.surveyResult.surveyResult.length === 0) {
       return matchesSearch && (!selectedYear || selectedYear === "all")
     }
 
     try {
-      const createdAt = employee.surveyResult.createdAt
+      // Get the latest submission date
+      const latestSubmission = employee.surveyResult.surveyResult[employee.surveyResult.surveyResult.length - 1]
+      const createdAt = latestSubmission?.date || employee.surveyResult.createdAt
       console.log(`🔍 Filtering employee ${employee.name} with date: ${createdAt}`)
 
       // Parse DD/MM/YYYY - HH:MM format
@@ -153,7 +182,7 @@ export default function EmployeePage() {
         <div className="flex flex-1 flex-col gap-6 p-6">
           {/* Page Header */}
           <div className="flex items-center justify-between">
-            <div>``
+            <div>
               <h1 className="text-2xl font-bold">Employee</h1>
               <p className="text-gray-600">Easily track and manage all employee data.</p>
               {selectedYear && selectedYear !== "all" && (

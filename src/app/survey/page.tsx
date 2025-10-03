@@ -6,35 +6,39 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Check, ChevronsUpDown, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Check, ChevronsUpDown, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useEmployee } from "@/hooks/use-employee"
 import { useSection } from "@/hooks/use-sections"
-import { useSurveySubmission } from "@/hooks/use-survey-submission"
-import { useYearlySubmissionCheck } from "@/hooks/use-yearly-submission-check"
+import { useSurveyProgress } from "@/hooks/use-survey-progress"
+import { useSubmissionCheck } from "@/hooks/use-submission-check"
 import { SurveyStatusGuard } from "@/components/survey-status-guard"
-import { toast } from "sonner"
 
 export default function SurveyPage() {
   const [open, setOpen] = useState(false)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<string>("")
   const { sections, isLoading: sectionsLoading, isError: sectionsError, error: sectionsErrorObj } = useSection()
   const { employees, isLoading } = useEmployee()
-  const { submitSurvey } = useSurveySubmission()
   const router = useRouter()
 
-  // Check if selected employee has already submitted this year
-  const { hasSubmittedThisYear, submissionData, isLoading: submissionCheckLoading } = useYearlySubmissionCheck(selectedEmployeeId)
+  // Survey progress management
+  const {
+    progressData,
+    initializeProgress,
+    isSurveyInProgress,
+    clearProgress
+  } = useSurveyProgress()
 
-  // Debug logging
-  console.log("🔍 Survey Page Debug:", {
-    selectedEmployeeId,
+  // Check if selected employee has already submitted this year
+  const {
     hasSubmittedThisYear,
     submissionData,
-    submissionCheckLoading,
-    currentYear: new Date().getFullYear()
-  })
+    isLoading: submissionCheckLoading
+  } = useSubmissionCheck(selectedEmployeeId)
 
   // Auto-redirect to thank you page if already submitted
   useEffect(() => {
@@ -43,6 +47,16 @@ export default function SurveyPage() {
       router.push('/survey/thankyou')
     }
   }, [selectedEmployeeId, hasSubmittedThisYear, submissionData, submissionCheckLoading, router])
+
+  // Debug logging
+  console.log("🔍 Survey Page Debug:", {
+    selectedEmployeeId,
+    isSurveyInProgress: isSurveyInProgress(),
+    progressData,
+    hasSubmittedThisYear,
+    submissionData,
+    currentYear: new Date().getFullYear()
+  })
 
   // Debug logging seperti di survey configuration
   console.log("📊 Survey Page - Sections data:", sections);
@@ -60,21 +74,10 @@ export default function SurveyPage() {
   console.log("🔍 Selected Employee Debug:", {
     selectedEmployee,
     selectedEmployeeId,
-    hasSubmittedThisYear,
-    submissionData
+    isSurveyInProgress: isSurveyInProgress(),
+    progressData
   })
 
-  // simpan jawaban user per section
-  const [sectionAnswers, setSectionAnswers] = useState<Record<string, Record<string, string | string[]>>>({})
-
-  // Convert section answers to the format expected by API
-  const convertAnswersForAPI = () => {
-    return Object.entries(sectionAnswers).map(([sectionId, answers]) => ({
-      section: sectionId,
-      question: Object.keys(answers),
-      answer: Object.values(answers) as string[]
-    }))
-  }
 
   useEffect(() => {
     const saved = localStorage.getItem("selectedEmployee")
@@ -96,19 +99,23 @@ export default function SurveyPage() {
 
     // Check if user has already submitted this year
     if (hasSubmittedThisYear && submissionData) {
-      toast.error("Anda sudah mengisi survey tahun ini!", {
-        description: `Survey sudah disubmit pada ${submissionData.createdAt}`,
-        duration: 5000,
-        icon: <AlertCircle className="w-4 h-4" />,
-      })
+      console.log("🚫 User already submitted this year, redirecting to thank you page")
+      router.push('/survey/thankyou')
       return
     }
 
-    // reset jawaban tiap mulai survey baru
-    setSectionAnswers({})
+    // Check if date is selected
+    if (!selectedDate) {
+      alert("Please select a survey date before starting")
+      return
+    }
 
-    // simpan employee di localStorage (dipakai di section)
+    // Initialize survey progress with selected date
+    initializeProgress(selectedEmployee.id, selectedEmployee.name, sections[0].id)
+
+    // simpan employee dan tanggal di localStorage (dipakai di section)
     localStorage.setItem("selectedEmployee", JSON.stringify(selectedEmployee))
+    localStorage.setItem("selectedSurveyDate", selectedDate)
 
     // ambil section pertama
     const firstSectionId = sections[0].id
@@ -117,39 +124,104 @@ export default function SurveyPage() {
     router.push(`/survey/section/${firstSectionId}`)
   }
 
+  // Handle continue existing survey
+  const handleContinueSurvey = () => {
+    if (progressData && sections && sections.length > 0) {
+      // Find the first incomplete section or continue from current
+      const incompleteSection = sections.find(section =>
+        !progressData.completedSections.includes(section.id)
+      )
 
-
-  // submit ke API
-  const handleSubmitSurvey = () => {
-    if (!selectedEmployee) return
-
-    const apiAnswers = convertAnswersForAPI()
-
-    const payload = {
-      employeeID: selectedEmployee.id,
-      name: selectedEmployee.name,
-      surveyResult: apiAnswers,
-      conclutionResult: "submit",
+      const targetSection = incompleteSection || sections.find(s => s.id === progressData.currentSectionId) || sections[0]
+      router.push(`/survey/section/${targetSection.id}`)
     }
-
-    submitSurvey.mutate(payload, {
-      onSuccess: (res) => {
-        console.log("Survey submitted:", res)
-        alert("Survey berhasil dikirim!")
-        // Clear all survey answers
-        setSectionAnswers({})
-        router.push("/") // redirect ke halaman lain setelah submit
-      },
-      onError: (err: Error) => {
-        alert("Gagal submit survey: " + err.message)
-      },
-    })
   }
+
+
+
 
 
   const selectedEmployeeData = employees?.find(
     (emp: { id: number }) => emp.id === Number(selectedEmployeeId)
   )
+
+  // Show loading state while checking submission status
+  if (selectedEmployeeId && submissionCheckLoading) {
+    return (
+      <SurveyStatusGuard>
+        <section className="flex flex-col items-center justify-center px-4 py-12 min-h-screen bg-white">
+          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center border-2 border-black">
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-black border-t-transparent mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-black mb-2">Checking Submission Status</h2>
+            <p className="text-gray-600">Please wait while we verify your survey status...</p>
+          </div>
+        </section>
+      </SurveyStatusGuard>
+    )
+  }
+
+  // Check if employee has already submitted this year
+  if (selectedEmployeeId && hasSubmittedThisYear && submissionData) {
+    return (
+      <SurveyStatusGuard>
+        <section className="flex flex-col items-center justify-center px-4 py-12 min-h-screen bg-white">
+          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center border-2 border-black">
+            {/* Success icon */}
+            <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6">
+              <Check className="w-8 h-8 text-white" />
+            </div>
+
+            {/* Title */}
+            <h1 className="text-2xl font-bold text-black mb-4">
+              Survey Already Completed
+            </h1>
+
+            {/* Message */}
+            <p className="text-gray-600 mb-6">
+              <strong>{selectedEmployeeData?.name}</strong> has already completed the Annual Survey for <strong>{submissionData.year}</strong>.
+            </p>
+
+            {/* Submission details */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 border-2 border-gray-200">
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>Submitted on:</strong>
+              </p>
+              <p className="text-sm font-medium text-black">
+                {submissionData.createdAt}
+              </p>
+            </div>
+
+            {/* Message */}
+            <div className="border-t-2 border-gray-200 pt-6">
+              <p className="text-sm text-gray-500 mb-4">
+                This form can only be submitted once per year.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                You can participate again next year.
+              </p>
+
+              {/* Action buttons */}
+              <div className="space-y-3">
+                <Button
+                  onClick={() => router.push('/survey/thankyou')}
+                  className="w-full bg-black hover:bg-gray-800 text-white border-2 border-black"
+                >
+                  View Submission Details
+                </Button>
+                <Button
+                  onClick={() => router.push('/')}
+                  variant="outline"
+                  className="w-full border-2 border-gray-300 hover:bg-gray-100"
+                >
+                  Back to Home
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </SurveyStatusGuard>
+    )
+  }
 
   // Error handling seperti di survey configuration
   if (sectionsError) {
@@ -165,86 +237,7 @@ export default function SurveyPage() {
     )
   }
 
-  // Show loading state while checking submission status
-  if (selectedEmployeeId && submissionCheckLoading) {
-    return (
-      <SurveyStatusGuard>
-        <section className="flex flex-col items-center justify-center px-4 py-12 min-h-screen bg-gray-50">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking Submission Status</h2>
-            <p className="text-gray-600">Please wait while we verify your survey status...</p>
-          </div>
-        </section>
-      </SurveyStatusGuard>
-    )
-  }
 
-  // If employee has already submitted this year, show Google Form style completion page
-  if (selectedEmployeeId && hasSubmittedThisYear && submissionData) {
-    return (
-      <SurveyStatusGuard>
-        <section className="flex flex-col items-center justify-center px-4 py-12 min-h-screen bg-gray-50">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-            {/* Google Form style icon */}
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-
-            {/* Title */}
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Survey Already Completed
-            </h1>
-
-            {/* Message */}
-            <p className="text-gray-600 mb-6">
-              <strong>{selectedEmployeeData?.name}</strong> has already completed the Annual Survey for <strong>{submissionData.year}</strong>.
-            </p>
-
-            {/* Submission details */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-600 mb-2">
-                <strong>Submitted on:</strong>
-              </p>
-              <p className="text-sm font-medium text-gray-800">
-                {submissionData.createdAt}
-              </p>
-            </div>
-
-            {/* Google Form style message */}
-            <div className="border-t pt-6">
-              <p className="text-sm text-gray-500 mb-4">
-                This form can only be submitted once per year.
-              </p>
-              <p className="text-sm text-gray-500 mb-6">
-                You can participate again next year.
-              </p>
-
-              {/* Action buttons */}
-              <div className="space-y-3">
-                <Button
-                  onClick={() => {
-                    setSelectedEmployeeId("")
-                    setSelectedEmployee(null)
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Select Different Employee
-                </Button>
-                <Button
-                  onClick={() => router.push('/')}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Back to Home
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </SurveyStatusGuard>
-    )
-  }
 
   return (
     <SurveyStatusGuard>
@@ -327,6 +320,29 @@ export default function SurveyPage() {
             </div>
           )}
 
+          {/* Date Selection Form */}
+          {selectedEmployeeData && (
+            <div className="w-full mb-6">
+              <Label htmlFor="survey-date" className="text-sm font-bold text-black mb-2 block">
+                Survey Date
+              </Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="survey-date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="pl-10 bg-white border-2 border-black rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-gray-600"
+                  placeholder="Select survey date"
+                />
+              </div>
+              <p className="text-xs text-gray-600 mt-1">
+                Select the date for this survey submission
+              </p>
+            </div>
+          )}
+
           {/* Debug info untuk sections */}
           {sections && (
             <div className="w-full mb-4 p-3 bg-gray-50 rounded-lg text-sm">
@@ -341,51 +357,81 @@ export default function SurveyPage() {
             </div>
           )}
 
-          <Button
-            onClick={handleStartSurvey}
-            className={`md:mt-6 w-full border border-b-4 cursor-pointer transition-all duration-300 border-r-4 disabled:opacity-50 disabled:cursor-not-allowed ${hasSubmittedThisYear
-              ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
-              : "bg-white text-black border-black hover:bg-white hover:border"
-              }`}
-            disabled={!selectedEmployeeId || sectionsLoading || !sections || sections.length === 0 || hasSubmittedThisYear}
-          >
-            {sectionsLoading ? "Loading Survey..." :
-              !sections || sections.length === 0 ? "No Sections Available" :
-                hasSubmittedThisYear ? "Survey Already Completed" :
-                  "Start Survey !"}
-          </Button>
 
-          {/* Pesan jika user sudah submit */}
-          {hasSubmittedThisYear && submissionData && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <p className="text-sm font-medium text-red-800">
-                  Anda sudah mengisi survey tahun ini!
+
+          {/* Survey progress info */}
+          {progressData && progressData.employeeId === selectedEmployeeId && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-xl border-2 border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-bold text-black">Survey in Progress</span>
+                </div>
+                <span className="text-sm font-bold text-black">
+                  {progressData.completedSections.length}/{sections?.length || 0} completed
+                </span>
+              </div>
+              <div className="mt-3">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-black h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(progressData.completedSections.length / (sections?.length || 1)) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  Started: {new Date(progressData.startTime).toLocaleDateString()}
                 </p>
               </div>
-              <p className="text-xs text-red-600">
-                Survey disubmit pada: <strong>{submissionData.createdAt}</strong>
-              </p>
-              <p className="text-xs text-red-600 mt-1">
-                Anda dapat mengisi survey lagi tahun depan.
-              </p>
             </div>
           )}
 
-          {/* tombol submit akhir survey */}
-          {Object.keys(sectionAnswers).length > 0 && (
+          {/* Survey action buttons */}
+          {progressData && progressData.employeeId === selectedEmployeeId ? (
+            <div className="space-y-3">
+              <Button
+                onClick={handleContinueSurvey}
+                className="w-full h-12 font-medium rounded-xl transition-all duration-200 border-2 bg-black hover:bg-gray-800 text-white border-black shadow-lg hover:shadow-xl"
+              >
+                Continue Survey
+              </Button>
+              <Button
+                onClick={() => {
+                  clearProgress()
+                  setSelectedEmployeeId("")
+                  setSelectedEmployee(null)
+                  setSelectedDate("")
+                }}
+                variant="outline"
+                className="w-full border-2 border-gray-300 hover:bg-gray-100 text-gray-600 font-medium py-3 rounded-xl transition-all duration-200"
+              >
+                Start New Survey
+              </Button>
+            </div>
+          ) : (
             <Button
-              onClick={handleSubmitSurvey}
-              className="mt-4 w-full bg-black text-white"
-              disabled={submitSurvey.isPending}
+              onClick={handleStartSurvey}
+              className="w-full h-12 font-medium rounded-xl transition-all duration-200 border-2 bg-black hover:bg-gray-800 text-white border-black shadow-lg hover:shadow-xl"
+              disabled={!selectedEmployeeId || !selectedDate || sectionsLoading || !sections || sections.length === 0}
             >
-              {submitSurvey.isPending ? "Submitting..." : "Submit Survey"}
+              {sectionsLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Loading Survey...
+                </div>
+              ) : !sections || sections.length === 0 ? (
+                "No Sections Available"
+              ) : !selectedDate ? (
+                "Select Date to Start Survey"
+              ) : (
+                "Start Survey"
+              )}
             </Button>
           )}
 
           {!selectedEmployeeId && (
-            <p className="text-sm text-gray-500 mt-2">Please select an employee to start the survey</p>
+            <p className="text-sm text-gray-500 mt-4 text-center">
+              Please select your employee profile to begin the survey
+            </p>
           )}
         </div>
       </section>

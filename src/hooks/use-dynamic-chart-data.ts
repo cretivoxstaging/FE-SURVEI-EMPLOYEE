@@ -62,42 +62,49 @@ export const useDynamicChartData = () => {
     // Extract salary responses from survey results
     surveyResults.forEach((result) => {
       if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        result.surveyResult.forEach((section) => {
-          if (section.question && section.answer) {
-            section.question.forEach((question, index) => {
-              // Match by question text or section title
-              if (
-                question.includes(salaryQuestion.question) ||
-                question.toLowerCase().includes("salary") ||
-                section.section?.toLowerCase().includes("salary")
-              ) {
-                // Map the answer to the correct option text
-                const answer = section.answer[index];
-                const optionMapping = {
-                  "0": "Very Bad",
-                  "1": "Bad",
-                  "2": "Average",
-                  "3": "Good",
-                  "4": "Very Good",
-                };
+        // Process each survey submission
+        result.surveyResult.forEach((submission) => {
+          if (submission.dataResult && Array.isArray(submission.dataResult)) {
+            submission.dataResult.forEach((section) => {
+              if (section.question && section.answer) {
+                section.question.forEach((question, index) => {
+                  // Match by question text or section title
+                  if (
+                    question.includes(salaryQuestion.question) ||
+                    question.toLowerCase().includes("salary") ||
+                    section.section?.toLowerCase().includes("salary")
+                  ) {
+                    // Map the answer to the correct option text
+                    const answer = section.answer[index];
+                    const optionMapping = {
+                      "0": "Very Bad",
+                      "1": "Bad",
+                      "2": "Average",
+                      "3": "Good",
+                      "4": "Very Good",
+                    };
 
-                // If answer is a number (0-4), map it to text
-                if (optionMapping[answer as keyof typeof optionMapping]) {
-                  const mappedAnswer =
-                    optionMapping[answer as keyof typeof optionMapping];
-                  console.log(
-                    `🔍 Salary: Mapping answer "${answer}" to "${mappedAnswer}"`
-                  );
-                  responses.push(mappedAnswer);
-                } else {
-                  // If answer is already text, use it directly
-                  console.log(`🔍 Salary: Using answer directly: "${answer}"`);
-                  responses.push(answer);
-                }
+                    // If answer is a number (0-4), map it to text
+                    if (optionMapping[answer as keyof typeof optionMapping]) {
+                      const mappedAnswer =
+                        optionMapping[answer as keyof typeof optionMapping];
+                      console.log(
+                        `🔍 Salary: Mapping answer "${answer}" to "${mappedAnswer}"`
+                      );
+                      responses.push(mappedAnswer);
+                    } else {
+                      // If answer is already text, use it directly
+                      console.log(
+                        `🔍 Salary: Using answer directly: "${answer}"`
+                      );
+                      responses.push(answer);
+                    }
 
-                console.log(
-                  `🔍 Salary: Question: "${question}", Answer: "${answer}", Section: "${section.section}"`
-                );
+                    console.log(
+                      `🔍 Salary: Question: "${question}", Answer: "${answer}", Section: "${section.section}"`
+                    );
+                  }
+                });
               }
             });
           }
@@ -134,36 +141,41 @@ export const useDynamicChartData = () => {
     // Extract environment responses from survey results
     surveyResults.forEach((result) => {
       if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        result.surveyResult.forEach((section) => {
-          if (section.question && section.answer) {
-            section.question.forEach((question, index) => {
-              // Match by question text or section title
-              if (
-                question.includes(environmentQuestion.question) ||
-                question.toLowerCase().includes("physical") ||
-                question.toLowerCase().includes("environment") ||
-                section.section?.toLowerCase().includes("physical") ||
-                section.section?.toLowerCase().includes("environment")
-              ) {
-                // Map the answer to the correct option text
-                const answer = section.answer[index];
-                const optionMapping = {
-                  "0": "Very Bad",
-                  "1": "Bad",
-                  "2": "Average",
-                  "3": "Good",
-                  "4": "Very Good",
-                };
+        // Process each survey submission
+        result.surveyResult.forEach((submission) => {
+          if (submission.dataResult && Array.isArray(submission.dataResult)) {
+            submission.dataResult.forEach((section) => {
+              if (section.question && section.answer) {
+                section.question.forEach((question, index) => {
+                  // Match by question text or section title
+                  if (
+                    question.includes(environmentQuestion.question) ||
+                    question.toLowerCase().includes("physical") ||
+                    question.toLowerCase().includes("environment") ||
+                    section.section?.toLowerCase().includes("physical") ||
+                    section.section?.toLowerCase().includes("environment")
+                  ) {
+                    // Map the answer to the correct option text
+                    const answer = section.answer[index];
+                    const optionMapping = {
+                      "0": "Very Bad",
+                      "1": "Bad",
+                      "2": "Average",
+                      "3": "Good",
+                      "4": "Very Good",
+                    };
 
-                // If answer is a number (0-4), map it to text
-                if (optionMapping[answer as keyof typeof optionMapping]) {
-                  responses.push(
-                    optionMapping[answer as keyof typeof optionMapping]
-                  );
-                } else {
-                  // If answer is already text, use it directly
-                  responses.push(answer);
-                }
+                    // If answer is a number (0-4), map it to text
+                    if (optionMapping[answer as keyof typeof optionMapping]) {
+                      responses.push(
+                        optionMapping[answer as keyof typeof optionMapping]
+                      );
+                    } else {
+                      // If answer is already text, use it directly
+                      responses.push(answer);
+                    }
+                  }
+                });
               }
             });
           }
@@ -195,16 +207,21 @@ export const useDynamicChartData = () => {
     // Extract appreciation responses from survey results
     surveyResults.forEach((result) => {
       if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        result.surveyResult.forEach((section) => {
-          if (section.question && section.answer) {
-            section.question.forEach((question, index) => {
-              // Match by question text or section title
-              if (
-                question.includes(appreciationQuestion.question) ||
-                question.toLowerCase().includes("appreciated") ||
-                section.section?.toLowerCase().includes("appreciated")
-              ) {
-                responses.push(section.answer[index]);
+        // Process each survey submission
+        result.surveyResult.forEach((submission) => {
+          if (submission.dataResult && Array.isArray(submission.dataResult)) {
+            submission.dataResult.forEach((section) => {
+              if (section.question && section.answer) {
+                section.question.forEach((question, index) => {
+                  // Match by question text or section title
+                  if (
+                    question.includes(appreciationQuestion.question) ||
+                    question.toLowerCase().includes("appreciated") ||
+                    section.section?.toLowerCase().includes("appreciated")
+                  ) {
+                    responses.push(section.answer[index]);
+                  }
+                });
               }
             });
           }

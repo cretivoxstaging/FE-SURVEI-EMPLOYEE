@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Calendar, User } from "lucide-react"
+import { CheckCircle, Calendar, User, Home, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 const ThankyouPage = () => {
   const [submissionData, setSubmissionData] = useState<{
@@ -29,52 +29,78 @@ const ThankyouPage = () => {
   const currentYear = new Date().getFullYear()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center">
-        <CardHeader>
-          <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="mx-auto mb-6 w-24 h-24 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
+            <CheckCircle className="w-12 h-12 text-white" />
           </div>
-          <CardTitle className="text-2xl text-gray-900">Thank You!</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-gray-600">
-            Your survey response has been submitted successfully.
+          <h1 className="text-4xl font-bold text-black mb-4">Survey Completed!</h1>
+          <p className="text-xl text-gray-600">
+            Thank you for your valuable feedback
           </p>
+        </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-blue-800 font-medium">
-              ✅ You have already completed the Annual Survey for this year.
-            </p>
-            <p className="text-xs text-blue-600 mt-1">
-              You cannot submit the survey again until next year.
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-2xl border-2 border-black p-8 mb-8">
+          {/* Success Message */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-green-50 border-2 border-green-600 rounded-xl px-4 py-2 mb-4">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <span className="font-bold text-green-800">Survey Successfully Submitted</span>
+            </div>
+            <p className="text-gray-600 text-lg">
+              Your response has been recorded and will help us improve our workplace environment.
             </p>
           </div>
 
+          {/* Submission Details */}
           {submissionData && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <User className="w-4 h-4" />
-                <span>{submissionData.employeeName}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar className="w-4 h-4" />
-                <span>Submitted on {submissionData.submissionDate}</span>
-              </div>
-              <div className="text-xs text-gray-500">
-                Survey Year: {submissionData.year}
+            <div className="bg-gray-50 rounded-2xl p-6 mb-8 border-2 border-gray-200">
+              <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Submission Details
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-gray-700">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span className="font-medium">Employee:</span>
+                  <span>{submissionData.employeeName}</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <span className="font-medium">Submitted:</span>
+                  <span>{submissionData.submissionDate}</span>
+                </div>
+                <div className="text-sm text-gray-500 bg-gray-100 rounded-lg p-2 mt-3">
+                  Survey Year: {submissionData.year}
+                </div>
               </div>
             </div>
           )}
 
-          <div className="pt-4 border-t">
-            <p className="text-sm text-gray-500 mb-4">
-              You have completed the survey for {currentYear}.
-              You can participate again next year.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+
+          {/* Action Buttons */}
+          {/* <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => router.push('/')}
+              className="bg-black hover:bg-gray-800 text-white border-2 border-black font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Go to Homepage
+            </Button>
+            <Button
+              onClick={() => router.push('/survey')}
+              variant="outline"
+              className="border-2 border-gray-400 hover:bg-gray-100 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Survey
+            </Button>
+          </div> */}
+        </div>
+      </div>
     </div>
   )
 }

@@ -14,9 +14,13 @@ interface SurveyScoringProps {
     employeeID: string
     name: string
     surveyResult: Array<{
-      answer: string[]
-      section: string
-      question: string[]
+      date: string
+      dataResult: Array<{
+        answer: string[]
+        section: string
+        question: string[]
+      }>
+      conclutionResult: string
     }>
     conclutionResult: string
   }
@@ -121,7 +125,11 @@ export function SurveyScoring({ surveyData }: SurveyScoringProps) {
   const processSurveyScores = (): SectionScore[] => {
     const sectionScores: SectionScore[] = []
 
-    surveyData.surveyResult.forEach((sectionResult) => {
+    // Get the latest submission data
+    const latestSubmission = surveyData.surveyResult[surveyData.surveyResult.length - 1]
+    if (!latestSubmission?.dataResult) return sectionScores
+
+    latestSubmission.dataResult.forEach((sectionResult) => {
       const questionScores: QuestionScore[] = []
       let totalScore = 0
       let maxScore = 0
