@@ -40,11 +40,11 @@ export default function SurveyPage() {
     isLoading: submissionCheckLoading
   } = useSubmissionCheck(selectedEmployeeId)
 
-  // Auto-redirect to thank you page if already submitted
+  // Auto-redirect to completed page if already submitted
   useEffect(() => {
     if (selectedEmployeeId && hasSubmittedThisYear && submissionData && !submissionCheckLoading) {
-      console.log("🔄 Auto-redirecting to thank you page - user already submitted this year")
-      router.push('/survey/thankyou')
+      console.log("🔄 Auto-redirecting to completed page - user already submitted this year")
+      router.push('/survey/completed')
     }
   }, [selectedEmployeeId, hasSubmittedThisYear, submissionData, submissionCheckLoading, router])
 
@@ -100,7 +100,7 @@ export default function SurveyPage() {
     // Check if user has already submitted this year
     if (hasSubmittedThisYear && submissionData) {
       console.log("🚫 User already submitted this year, redirecting to thank you page")
-      router.push('/survey/thankyou')
+      router.push('/survey/completed')
       return
     }
 

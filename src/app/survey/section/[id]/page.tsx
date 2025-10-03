@@ -61,11 +61,11 @@ export default function SurveySectionPage() {
     }
   }, [])
 
-  // Auto-redirect to thank you page if already submitted
+  // Auto-redirect to completed page if already submitted
   useEffect(() => {
     if (selectedEmployeeId && hasSubmittedThisYear && submissionData && !submissionCheckLoading) {
-      console.log("🔄 Auto-redirecting to thank you page - user already submitted this year")
-      router.push('/survey/thankyou')
+      console.log("🔄 Auto-redirecting to completed page - user already submitted this year")
+      router.push('/survey/completed')
     }
   }, [selectedEmployeeId, hasSubmittedThisYear, submissionData, submissionCheckLoading, router])
 
@@ -212,6 +212,7 @@ export default function SurveySectionPage() {
       </div>
     )
   }
+
 
   if (!sections || sections.length === 0) {
     return (
@@ -402,7 +403,7 @@ export default function SurveySectionPage() {
           localStorage.removeItem("selectedEmployee")
           localStorage.removeItem("selectedSurveyDate")
 
-          router.push('/survey/thankyou')
+          router.push('/survey/completed')
         },
         onError: (error) => {
           console.error("Survey submission error:", error)
@@ -492,7 +493,7 @@ export default function SurveySectionPage() {
           localStorage.removeItem("selectedEmployee")
           localStorage.removeItem("selectedSurveyDate")
 
-          router.push('/survey/thankyou')
+          router.push('/survey/completed')
         },
         onError: (error) => {
           console.error("Survey submission error:", error)
