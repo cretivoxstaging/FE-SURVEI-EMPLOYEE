@@ -82,14 +82,14 @@ const ThankyouPage = () => {
 
 
           {/* Action Buttons */}
-          {/* <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* <Button
               onClick={() => router.push('/')}
               className="bg-black hover:bg-gray-800 text-white border-2 border-black font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center gap-2"
             >
               <Home className="w-4 h-4" />
               Go to Homepage
-            </Button>
+            </Button> */}
             <Button
               onClick={() => router.push('/survey')}
               variant="outline"
@@ -98,7 +98,7 @@ const ThankyouPage = () => {
               <ArrowLeft className="w-4 h-4" />
               Back to Survey
             </Button>
-          </div> */}
+          </div>
         </div>
       </div>
     </div>
