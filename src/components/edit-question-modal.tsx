@@ -36,7 +36,7 @@ export function EditQuestionModal({
 }) {
   const [text, setText] = React.useState("")
   const [type, setType] = React.useState<QuestionType>("multiple-choice")
-  const [required, setRequired] = React.useState<boolean>(false)
+  const [required, setRequired] = React.useState<boolean>(true)
   const [optionInput, setOptionInput] = React.useState("")
   const [options, setOptions] = React.useState<string[]>([])
 
@@ -106,28 +106,18 @@ export function EditQuestionModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="edit-question-type">Question Type *</Label>
-              <Select value={type} onValueChange={(v) => setType(v as QuestionType)}>
-                <SelectTrigger id="edit-question-type">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                  <SelectItem value="textarea">Long Text</SelectItem>
-                  <SelectItem value="rating">Rating (1-5)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end gap-2">
-              <Checkbox
-                id="edit-required"
-                checked={required}
-                onCheckedChange={(v) => setRequired(Boolean(v))}
-              />
-              <Label htmlFor="edit-required" className="cursor-pointer">Required</Label>
-            </div>
+          <div>
+            <Label htmlFor="edit-question-type">Question Type *</Label>
+            <Select value={type} onValueChange={(v) => setType(v as QuestionType)}>
+              <SelectTrigger id="edit-question-type">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                <SelectItem value="textarea">Long Text</SelectItem>
+                <SelectItem value="rating">Rating (1-5)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Card className="bg-blue-50 border-blue-200">

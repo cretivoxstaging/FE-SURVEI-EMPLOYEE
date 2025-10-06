@@ -120,3 +120,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile dropdown fixes */
+@media (max-width: 768px) {
+  [data-radix-popover-content] {
+    position: fixed !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    z-index: 9999 !important;
+  }
+}

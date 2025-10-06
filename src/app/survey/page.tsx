@@ -266,7 +266,14 @@ export default function SurveyPage() {
               </Button>
             </PopoverTrigger>
 
-            <PopoverContent side="bottom" align="start" sideOffset={8} className="w-full p-0 z-50">
+            <PopoverContent
+              side="bottom"
+              align="start"
+              sideOffset={8}
+              className="w-full p-0 z-50"
+              avoidCollisions={false}
+              collisionPadding={20}
+            >
               <Command>
                 <CommandInput placeholder="Search employee..." className="h-9" />
                 <CommandList>

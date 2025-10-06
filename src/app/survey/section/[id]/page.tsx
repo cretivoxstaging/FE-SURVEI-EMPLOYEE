@@ -271,6 +271,47 @@ export default function SurveySectionPage() {
     console.log("🔍 Saved to:", isSurveyInProgress ? "survey progress" : "localStorage")
   }
 
+  // Check if all questions are answered (all questions are now required)
+  const areAllQuestionsAnswered = () => {
+    if (!questions || questions.length === 0) return true
+
+    console.log("🔍 All questions check (all required):", {
+      totalQuestions: questions.length,
+      questionIds: questions.map(q => ({ id: q.id, text: q.text })),
+      currentAnswers: answers
+    })
+
+    const result = questions.every((question) => {
+      const answer = answers[question.id]
+
+      // Check if answer exists and is not empty
+      if (!answer) {
+        console.log("❌ Question not answered:", { questionId: question.id, questionText: question.text })
+        return false
+      }
+
+      // For string answers, check if not empty
+      if (typeof answer === 'string') {
+        const isValid = answer.trim() !== ''
+        console.log("🔍 String answer check:", { questionId: question.id, answer, isValid })
+        return isValid
+      }
+
+      // For array answers (checkbox), check if not empty
+      if (Array.isArray(answer)) {
+        const isValid = answer.length > 0
+        console.log("🔍 Array answer check:", { questionId: question.id, answer, isValid })
+        return isValid
+      }
+
+      console.log("❌ Unknown answer type:", { questionId: question.id, answer, type: typeof answer })
+      return false
+    })
+
+    console.log("🔍 All questions answered:", result)
+    return result
+  }
+
   // Navigation handlers
   const handlePrevious = () => {
     if (prevSection) {
@@ -664,9 +705,6 @@ export default function SurveySectionPage() {
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-black mb-2 leading-relaxed">
                           {question.text}
-                          {question.required && (
-                            <span className="text-black ml-2 text-lg">*</span>
-                          )}
                         </h3>
                         <div className="mt-4">
                           {renderQuestion(question)}
@@ -695,6 +733,29 @@ export default function SurveySectionPage() {
             )}
           </div>
 
+          {/* Questions validation indicator */}
+          {questions && questions.length > 0 && (
+            <div className="mt-8 mb-4">
+              {!areAllQuestionsAnswered() && (
+                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <span className="text-sm font-medium text-yellow-800">
+                      Please answer all questions to continue
+                    </span>
+                  </div>
+                  <div className="text-xs text-yellow-700">
+                    {questions.length - questions.filter(q => answers[q.id] &&
+                      (typeof answers[q.id] === 'string' ? (answers[q.id] as string).trim() !== '' :
+                        Array.isArray(answers[q.id]) ? (answers[q.id] as string[]).length > 0 : false)).length} of {questions.length} questions answered
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Navigation dengan black and white design */}
           <div className="flex justify-between items-center mt-12">
             <Button
@@ -721,7 +782,7 @@ export default function SurveySectionPage() {
 
             <Button
               onClick={handleNext}
-              disabled={submitSurvey.isPending}
+              disabled={submitSurvey.isPending || !areAllQuestionsAnswered()}
               className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
             >
               {submitSurvey.isPending ? (
