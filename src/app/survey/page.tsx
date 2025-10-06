@@ -16,6 +16,7 @@ import { useSection } from "@/hooks/use-sections"
 import { useSurveyProgress } from "@/hooks/use-survey-progress"
 import { useSubmissionCheck } from "@/hooks/use-submission-check"
 import { SurveyStatusGuard } from "@/components/survey-status-guard"
+import Image from "next/image"
 
 export default function SurveyPage() {
   const [open, setOpen] = useState(false)
@@ -243,8 +244,9 @@ export default function SurveyPage() {
     <SurveyStatusGuard>
       <section className="flex flex-col items-center justify-center px-4 py-12">
         <h1 className="text-4xl xl:text-6xl font-bold text-center leading-tight mb-8">
-          Annual <br /> Survey Employee
+          CBN <br /> EMPLOYEE SURVEY
         </h1>
+        <Image src="/LOGOBRANCH.png" alt="CBN Logo" width={200} height={200} />
 
         <div className="flex flex-col gap-2 items-center w-full max-w-md">
           <Popover open={open} onOpenChange={setOpen}>
@@ -344,7 +346,7 @@ export default function SurveyPage() {
           )}
 
           {/* Debug info untuk sections */}
-          {sections && (
+          {/* {sections && (
             <div className="w-full mb-4 p-3 bg-gray-50 rounded-lg text-sm">
               <p className="font-medium">Available Sections: {sections.length}</p>
               <div className="mt-2 space-y-1">
@@ -355,7 +357,7 @@ export default function SurveyPage() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
 
 

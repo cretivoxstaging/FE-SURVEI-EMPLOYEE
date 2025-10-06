@@ -232,7 +232,7 @@ export default function SurveySectionPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-red-500 mb-4">Section not found</p>
-          <div className="text-sm text-gray-600 mb-4">
+          {/* <div className="text-sm text-gray-600 mb-4">
             <p>Looking for Section ID: {sectionId}</p>
             <p>Available sections: {sections?.length || 0}</p>
             {sections && sections.length > 0 && (
@@ -245,7 +245,7 @@ export default function SurveySectionPage() {
                 </ul>
               </div>
             )}
-          </div>
+          </div> */}
           <Button onClick={() => router.push('/survey')}>
             Back to Survey
           </Button>
@@ -620,19 +620,13 @@ export default function SurveySectionPage() {
                 <div className="bg-white rounded-xl px-4 py-2 border-2 border-black">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-black rounded-full"></div>
-                    <span className="text-sm font-bold text-black">
+                    <span className="text-sm font-regular text-black">
                       Section {currentIndex + 1} of {totalSections}
                     </span>
                   </div>
                 </div>
 
-                {/* Progress bar */}
-                <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden border border-black">
-                  <div
-                    className="h-full bg-black rounded-full transition-all duration-500"
-                    style={{ width: `${((currentIndex + 1) / totalSections) * 100}%` }}
-                  ></div>
-                </div>
+
               </div>
             </div>
 
@@ -645,7 +639,7 @@ export default function SurveySectionPage() {
                 <div className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border-2 border-gray-200">
                   <div className="w-2 h-2 bg-black rounded-full"></div>
                   <span className="text-sm font-bold text-black">
-                    Survey for: <span className="font-bold text-black">{selectedEmployee?.name || "Unknown"}</span>
+                    <span className="font-bold text-black">{selectedEmployee?.name || "Unknown"}</span>
                     <span className="text-gray-600 ml-1">({selectedEmployee?.position || "Unknown"})</span>
                   </span>
                 </div>
@@ -664,9 +658,9 @@ export default function SurveySectionPage() {
                 <div key={question.id} className="group">
                   <div className="bg-white rounded-2xl shadow-2xl border-2 border-black p-8 hover:shadow-2xl transition-all duration-300">
                     <div className="flex items-start gap-4 mb-6">
-                      <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                      {/* <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                         {index + 1}
-                      </div>
+                      </div> */}
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-black mb-2 leading-relaxed">
                           {question.text}
