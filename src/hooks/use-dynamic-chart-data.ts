@@ -46,7 +46,7 @@ export const useDynamicChartData = () => {
 
     return (
       getAllQuestions.data.data.find((question) =>
-        question.sectionTitle.toLowerCase().includes(keyword.toLowerCase())
+        question.sectionTitle?.toLowerCase().includes(keyword.toLowerCase())
       ) || null
     );
   };
@@ -70,9 +70,10 @@ export const useDynamicChartData = () => {
                 section.question.forEach((question, index) => {
                   // Match by question text or section title
                   if (
-                    question.includes(salaryQuestion.question) ||
-                    question.toLowerCase().includes("salary") ||
-                    section.section?.toLowerCase().includes("salary")
+                    question &&
+                    (question.includes(salaryQuestion.question) ||
+                      question.toLowerCase().includes("salary") ||
+                      section.section?.toLowerCase().includes("salary"))
                   ) {
                     // Map the answer to the correct option text
                     const answer = section.answer[index];
@@ -149,11 +150,12 @@ export const useDynamicChartData = () => {
                 section.question.forEach((question, index) => {
                   // Match by question text or section title
                   if (
-                    question.includes(environmentQuestion.question) ||
-                    question.toLowerCase().includes("physical") ||
-                    question.toLowerCase().includes("environment") ||
-                    section.section?.toLowerCase().includes("physical") ||
-                    section.section?.toLowerCase().includes("environment")
+                    question &&
+                    (question.includes(environmentQuestion.question) ||
+                      question.toLowerCase().includes("physical") ||
+                      question.toLowerCase().includes("environment") ||
+                      section.section?.toLowerCase().includes("physical") ||
+                      section.section?.toLowerCase().includes("environment"))
                   ) {
                     // Map the answer to the correct option text
                     const answer = section.answer[index];
@@ -215,9 +217,10 @@ export const useDynamicChartData = () => {
                 section.question.forEach((question, index) => {
                   // Match by question text or section title
                   if (
-                    question.includes(appreciationQuestion.question) ||
-                    question.toLowerCase().includes("appreciated") ||
-                    section.section?.toLowerCase().includes("appreciated")
+                    question &&
+                    (question.includes(appreciationQuestion.question) ||
+                      question.toLowerCase().includes("appreciated") ||
+                      section.section?.toLowerCase().includes("appreciated"))
                   ) {
                     responses.push(section.answer[index]);
                   }

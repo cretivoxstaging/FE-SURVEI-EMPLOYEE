@@ -29,18 +29,25 @@ export const useDashboardCharts = () => {
     // Extract physical environment ratings from survey results
     surveyResults.forEach((result) => {
       if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        result.surveyResult.forEach((section) => {
-          if (
-            section.section === "job_satisfaction" &&
-            section.question &&
-            section.answer
-          ) {
-            section.question.forEach((question, index) => {
+        result.surveyResult.forEach((submission) => {
+          if (submission.dataResult && Array.isArray(submission.dataResult)) {
+            submission.dataResult.forEach((section) => {
               if (
-                question.includes("Physical work environment") &&
-                section.answer[index]
+                section.section === "job_satisfaction" &&
+                section.question &&
+                section.answer
               ) {
-                responses.push(section.answer[index]);
+                section.question.forEach(
+                  (question: string | null, index: number) => {
+                    if (
+                      question &&
+                      question.includes("Physical work environment") &&
+                      section.answer[index]
+                    ) {
+                      responses.push(section.answer[index]);
+                    }
+                  }
+                );
               }
             });
           }
@@ -71,15 +78,25 @@ export const useDashboardCharts = () => {
     // Extract salary ratings from survey results
     surveyResults.forEach((result) => {
       if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        result.surveyResult.forEach((section) => {
-          if (
-            section.section === "job_satisfaction" &&
-            section.question &&
-            section.answer
-          ) {
-            section.question.forEach((question, index) => {
-              if (question.includes("Salary") && section.answer[index]) {
-                responses.push(section.answer[index]);
+        result.surveyResult.forEach((submission) => {
+          if (submission.dataResult && Array.isArray(submission.dataResult)) {
+            submission.dataResult.forEach((section) => {
+              if (
+                section.section === "job_satisfaction" &&
+                section.question &&
+                section.answer
+              ) {
+                section.question.forEach(
+                  (question: string | null, index: number) => {
+                    if (
+                      question &&
+                      question.includes("Salary") &&
+                      section.answer[index]
+                    ) {
+                      responses.push(section.answer[index]);
+                    }
+                  }
+                );
               }
             });
           }
@@ -110,20 +127,27 @@ export const useDashboardCharts = () => {
     // Extract appreciation feedback from survey results
     surveyResults.forEach((result) => {
       if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        result.surveyResult.forEach((section) => {
-          if (
-            section.section === "growth" &&
-            section.question &&
-            section.answer
-          ) {
-            section.question.forEach((question, index) => {
+        result.surveyResult.forEach((submission) => {
+          if (submission.dataResult && Array.isArray(submission.dataResult)) {
+            submission.dataResult.forEach((section) => {
               if (
-                question.includes(
-                  "Is enough effort made to solicit coworkers' opinions and feedback"
-                ) &&
-                section.answer[index]
+                section.section === "growth" &&
+                section.question &&
+                section.answer
               ) {
-                responses.push(section.answer[index]);
+                section.question.forEach(
+                  (question: string | null, index: number) => {
+                    if (
+                      question &&
+                      question.includes(
+                        "Is enough effort made to solicit coworkers' opinions and feedback"
+                      ) &&
+                      section.answer[index]
+                    ) {
+                      responses.push(section.answer[index]);
+                    }
+                  }
+                );
               }
             });
           }

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { Users, FileText, MessageSquare, X } from 'lucide-react'
+import { Users, FileText, MessageSquare, X, UserX, HelpCircle } from 'lucide-react'
 import { AppSidebar } from "@/components/app-sidebar"
 import { PhysicalWorkEnvironmentChart } from "@/components/physical-work-environtment"
 import { SalarySatisfactionChart } from "@/components/salary-chart"
@@ -19,14 +19,16 @@ import { ChartDebugInfo } from "@/components/chart-debug-info"
 import { YearlySurveyStats } from "@/components/yearly-survey-stats"
 import { useYearlySurveyData } from "@/hooks/use-yearly-survey-data"
 import { useProtectedRoute } from "@/hooks/use-protected-route"
+import { useQuestions } from "@/hooks/use-questions"
 
 export default function Page() {
   // Protect this route
   useProtectedRoute();
 
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [currentDate, setCurrentDate] = useState("")
   const { isActiveSurvey, toggleSurvey } = useActiveSurvey(true)
-  const { employees, isLoading, isError, error } = useEmployee()
+  const { employees, isLoading, isError } = useEmployee()
   const {
     isLoading: surveyLoading,
     isError: surveyError,
@@ -37,14 +39,30 @@ export default function Page() {
     getDebugInfo
   } = useDynamicChartData()
 
+  // Get questions data for total questions count
+  const { questions: allQuestions, isLoading: questionsLoading } = useQuestions("", "", { enabled: true })
+
   const toggleChat = () => setIsChatOpen(!isChatOpen)
 
-  // Get yearly survey data
-  const { yearlyData, currentYearData, previousYearData, growthMetrics, isLoading: yearlyLoading } = useYearlySurveyData(employees || [])
+  // Set current date only on client side to avoid hydration mismatch
+  useEffect(() => {
+    const date = new Date()
+    const formattedDate = date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+    setCurrentDate(formattedDate)
+  }, [])
 
-  const totalEmployees = employees?.filter(emp => emp.employee_status !== "Resign").length || 0
+  // Get yearly survey data
+  const { yearlyData } = useYearlySurveyData(employees || [])
+
+  const totalEmployees = employees?.filter((emp: { employee_status: string }) => emp.employee_status !== "Resign").length || 0
   const surveyStats = getOverallStats()
   const surveyResponses = surveyStats.totalResponses
+  const employeesNotResponded = totalEmployees - surveyResponses
+  const totalQuestions = allQuestions?.length || 0
 
 
   // Get real chart data from survey results
@@ -84,7 +102,7 @@ export default function Page() {
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
                   <p className="text-sm text-gray-600 mt-1">Employee Survey Analytics & Insights</p>
                   {/* Show loading/error status in header instead of blocking content */}
-                  {(isLoading || surveyLoading) && (
+                  {(isLoading || surveyLoading || questionsLoading) && (
                     <p className="text-xs text-blue-600 mt-1">🔄 Loading data...</p>
                   )}
                   {(isError || surveyError) && (
@@ -100,7 +118,7 @@ export default function Page() {
               </div>
 
               {/* Metrics Grid - Modern Layout */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                 <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-blue-700">Total Employees</CardTitle>
@@ -124,6 +142,29 @@ export default function Page() {
                   </CardContent>
                   <div className="absolute top-0 right-0 w-20 h-20 bg-green-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
                 </Card>
+                <Card className="relative overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-orange-700">Not Responded</CardTitle>
+                    <UserX className="h-4 w-4 text-orange-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-900">{employeesNotResponded}</div>
+                    <p className="text-xs text-orange-600 mt-1">Employees pending response</p>
+                  </CardContent>
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-orange-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
+                </Card>
+
+                <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-indigo-700">Total Questions</CardTitle>
+                    <HelpCircle className="h-4 w-4 text-indigo-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-indigo-900">{totalQuestions}</div>
+                    <p className="text-xs text-indigo-600 mt-1">Survey questions available</p>
+                  </CardContent>
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
+                </Card>
 
                 <Card className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -134,26 +175,21 @@ export default function Page() {
                     <Badge className={`${isActiveSurvey ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"} text-white border-0`}>
                       {isActiveSurvey ? "Active" : "Inactive"}
                     </Badge>
-                    <p className="text-xs text-purple-600 mt-2">Last updated: {new Date().toLocaleDateString()}</p>
+                    <p className="text-xs text-purple-600 mt-2">Last updated: {currentDate || "Loading..."}</p>
                   </CardContent>
                   <div className="absolute top-0 right-0 w-20 h-20 bg-purple-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
                 </Card>
+
+
               </div>
 
               {/* Main Content Area - Analytics Only */}
               <div className="space-y-6">
-                {/* Charts Grid - Modern Layout */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  {/* Top Row - Two Equal Charts */}
-                  <div className="space-y-6">
-                    <PhysicalWorkEnvironmentChart data={chartData.physicalWorkEnvironment} />
-                    <SalarySatisfactionChart data={chartData.salary} />
-                  </div>
-
-                  {/* Bottom Row - Full Width Chart */}
-                  <div className="xl:col-span-1">
-                    <AppreciationChart data={chartData.appreciation} />
-                  </div>
+                {/* Charts Grid - 3 Column Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <PhysicalWorkEnvironmentChart data={chartData.physicalWorkEnvironment} />
+                  <SalarySatisfactionChart data={chartData.salary} />
+                  <AppreciationChart data={chartData.appreciation} />
                 </div>
               </div>
 

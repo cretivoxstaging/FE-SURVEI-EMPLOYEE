@@ -2,11 +2,17 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+export interface AnswerData {
+  questionText: string;
+  sectionTitle: string;
+  answer: string | string[];
+}
+
 export interface SurveyProgressData {
   employeeId: string;
   employeeName: string;
   currentSectionId: string;
-  answers: Record<string, string | string[]>;
+  answers: Record<string, AnswerData>;
   completedSections: string[];
   startTime: string;
   lastUpdated: string;
@@ -63,14 +69,23 @@ export const useSurveyProgress = () => {
 
   // Save answer for specific question
   const saveAnswer = useCallback(
-    (questionId: string, answer: string | string[]) => {
+    (
+      questionId: string,
+      answer: string | string[],
+      questionText: string,
+      sectionTitle: string
+    ) => {
       if (!progressData) return;
 
       const updatedProgress = {
         ...progressData,
         answers: {
           ...progressData.answers,
-          [questionId]: answer,
+          [questionId]: {
+            questionText,
+            sectionTitle,
+            answer,
+          },
         },
         lastUpdated: new Date().toISOString(),
       };
@@ -128,7 +143,7 @@ export const useSurveyProgress = () => {
 
   // Get answer for specific question
   const getAnswer = (questionId: string): string | string[] | undefined => {
-    return progressData?.answers[questionId];
+    return progressData?.answers[questionId]?.answer;
   };
 
   // Check if section is completed

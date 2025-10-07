@@ -25,6 +25,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog"
 import { useAuth } from "@/hooks/use-auth"
+import Image from "next/image"
 
 const menuData = {
   general: [
@@ -55,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <LayoutDashboard className="size-4" />
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-semibold text-lg">Dashboard</span>
+            <Image src="/CBN-logo.jpg" className="font-semibold text-lg" alt="CBN" width={100} height={100} />
           </div>
         </div>
       </SidebarHeader>

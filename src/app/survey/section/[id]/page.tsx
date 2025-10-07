@@ -15,9 +15,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { SurveyStatusGuard } from "@/components/survey-status-guard"
 import { SurveySkeleton, SurveyStepSkeleton } from "@/components/survey-skeleton"
-import { useSurveyProgress } from "@/hooks/use-survey-progress"
+import { useSurveyProgress, SurveyProgressData } from "@/hooks/use-survey-progress"
 import { useSubmissionCheck } from "@/hooks/use-submission-check"
-import { apiClient } from "@/lib/api-client"
 
 interface Section {
   id: string
@@ -86,6 +85,8 @@ export default function SurveySectionPage() {
     return s.id === sectionId || sIdStr === sectionIdStr
   })
   const sectionTitle = currentSection?.title
+
+  console.log("🔍 Current Section Title:", sectionTitle)
 
   // Debug current section finding
   console.log("🔍 Current section search:", {
@@ -162,16 +163,39 @@ export default function SurveySectionPage() {
         updateCurrentSection(sectionId)
       }
     }
+
+    // Check and migrate old format data if needed
+    const checkAndMigrateOldData = () => {
+      if (progressData && progressData.answers) {
+        const firstAnswerKey = Object.keys(progressData.answers)[0]
+        if (firstAnswerKey) {
+          const firstAnswer = progressData.answers[firstAnswerKey]
+          // Check if it's old format (direct value instead of AnswerData object)
+          if (typeof firstAnswer === 'string' || Array.isArray(firstAnswer)) {
+            console.warn("⚠️ Old format detected in survey progress. Clearing and restarting...")
+            clearProgress()
+            // Clear all section answers
+            sections?.forEach((section: Section) => {
+              localStorage.removeItem(`answers-${section.id}`)
+            })
+            alert("Format data lama terdeteksi. Silakan mulai survey dari awal.")
+            router.push('/survey')
+          }
+        }
+      }
+    }
+
+    checkAndMigrateOldData()
   }, [sectionId]) // Removed progressData and updateCurrentSection from dependencies
 
   // Load answers from survey progress or localStorage fallback
   useEffect(() => {
     if (isSurveyInProgress && progressData) {
-      // Load answers from survey progress
+      // Load answers from survey progress - extract answer value from AnswerData structure
       const progressAnswers = Object.keys(progressData.answers).reduce((acc, questionId) => {
         // Only load answers for current section
         if (questions?.some(q => q.id === questionId)) {
-          acc[questionId] = progressData.answers[questionId]
+          acc[questionId] = progressData.answers[questionId].answer
         }
         return acc
       }, {} as Record<string, string | string[]>)
@@ -184,8 +208,20 @@ export default function SurveySectionPage() {
       console.log("🔍 Loading answers from localStorage:", { sectionId, saved })
       if (saved) {
         const parsedAnswers = JSON.parse(saved)
-        console.log("🔍 Parsed answers:", parsedAnswers)
-        setAnswers(parsedAnswers)
+        // Extract answer values from AnswerData structure
+        const extractedAnswers = Object.keys(parsedAnswers).reduce((acc, questionId) => {
+          const answerData = parsedAnswers[questionId]
+          // Check if it's the new structure (AnswerData) or old structure (direct value)
+          if (answerData && typeof answerData === 'object' && 'answer' in answerData) {
+            acc[questionId] = answerData.answer
+          } else {
+            // Fallback for old format
+            acc[questionId] = answerData
+          }
+          return acc
+        }, {} as Record<string, string | string[]>)
+        console.log("🔍 Extracted answers:", extractedAnswers)
+        setAnswers(extractedAnswers)
       }
     }
   }, [sectionId, questions]) // Removed isSurveyInProgress and progressData from dependencies
@@ -255,16 +291,39 @@ export default function SurveySectionPage() {
   }
 
   // Handle answer changes
-  const handleAnswerChange = (questionId: string, value: string | string[]) => {
-    console.log("🔍 handleAnswerChange called:", { questionId, value, sectionId })
+  const handleAnswerChange = (questionId: string, value: string | string[], questionText: string) => {
+    console.log("🔍 handleAnswerChange called:", {
+      questionId,
+      value,
+      questionText,
+      sectionId,
+      sectionTitle,
+      isSurveyInProgress
+    })
     const newAnswers = { ...answers, [questionId]: value }
     setAnswers(newAnswers)
 
     // Save to survey progress if in progress, otherwise save to localStorage
     if (isSurveyInProgress) {
-      saveAnswer(questionId, value)
+      console.log("🔍 Saving to survey progress with:", {
+        questionId,
+        value,
+        questionText,
+        sectionTitle: sectionTitle || ""
+      })
+      saveAnswer(questionId, value, questionText, sectionTitle || "")
     } else {
-      localStorage.setItem(`answers-${sectionId}`, JSON.stringify(newAnswers))
+      // For localStorage fallback, save with full data structure
+      const answerData = {
+        questionText,
+        sectionTitle: sectionTitle || "",
+        answer: value,
+      }
+      console.log("🔍 Saving to localStorage with answerData:", answerData)
+      const savedAnswers = JSON.parse(localStorage.getItem(`answers-${sectionId}`) || "{}")
+      savedAnswers[questionId] = answerData
+      localStorage.setItem(`answers-${sectionId}`, JSON.stringify(savedAnswers))
+      console.log("🔍 Full localStorage data:", savedAnswers)
     }
 
     console.log("🔍 Updated answers:", newAnswers)
@@ -359,40 +418,54 @@ export default function SurveySectionPage() {
   }
 
   // Submit final survey using progress data
-  const submitFinalSurvey = async (progressData: any) => {
+  const submitFinalSurvey = async (progressData: SurveyProgressData) => {
     try {
-      // Fetch all questions first
-      const response = await apiClient.get("/api/v1/question")
-      const questionsData = response.data
-      const allQuestions = questionsData?.data || questionsData || []
+      console.log("🔍 Progress Data received:", progressData)
+      console.log("🔍 Progress Data answers:", progressData.answers)
 
-      const surveyResult = sections?.map((section: Section) => {
-        // Get answers for this section from progress data
-        const sectionAnswers = Object.keys(progressData.answers).reduce((acc, questionId) => {
-          const question = allQuestions.find((q: any) => q.id === parseInt(questionId))
-          if (question && (question.sectionTitle === section.title || String(question.sectionId) === String(section.id))) {
-            acc[questionId] = progressData.answers[questionId]
-          }
-          return acc
-        }, {} as Record<string, string | string[]>)
+      // Convert answers to dataResult format
+      const dataResult: Array<{
+        section: string;
+        question: string[];
+        answer: string[];
+      }> = []
 
-        // Find questions for this section
-        const sectionQuestions = allQuestions.filter((q: any) => {
-          return q.sectionTitle === section.title || String(q.sectionId) === String(section.id)
-        })
+      // Group answers by section
+      const answersBySection: Record<string, Array<{ question: string; answer: string | string[] }>> = {}
 
-        // Map answers using question IDs
-        const questionIds = sectionQuestions.map((q: any) => String(q.id))
-        const answers = questionIds.map((qId: string) => {
-          return sectionAnswers[qId] || ""
-        })
+      Object.keys(progressData.answers).forEach((questionId) => {
+        const answerData = progressData.answers[questionId]
+        console.log("🔍 Processing answer:", { questionId, answerData })
 
-        return {
-          section: section.title,
-          question: questionIds,
-          answer: answers,
+        const section = answerData?.sectionTitle || "Unknown Section"
+        const questionText = answerData?.questionText || "Unknown Question"
+        const answer = answerData?.answer || ""
+
+        if (!answersBySection[section]) {
+          answersBySection[section] = []
         }
+
+        answersBySection[section].push({
+          question: questionText,
+          answer: answer
+        })
       })
+
+      console.log("🔍 Answers by section:", answersBySection)
+
+      // Convert to array format
+      Object.keys(answersBySection).forEach((sectionTitle) => {
+        const sectionAnswers = answersBySection[sectionTitle]
+        sectionAnswers.forEach((item) => {
+          dataResult.push({
+            section: sectionTitle,
+            question: [item.question],
+            answer: Array.isArray(item.answer) ? item.answer : [item.answer]
+          })
+        })
+      })
+
+      console.log("🔍 Final dataResult:", dataResult)
 
       // Get selected date from localStorage
       const selectedDate = localStorage.getItem("selectedSurveyDate")
@@ -423,7 +496,7 @@ export default function SurveySectionPage() {
         surveyResult: [
           {
             date: formattedDate,
-            dataResult: surveyResult || [],
+            dataResult: dataResult,
             conclutionResult: "submit",
           }
         ],
@@ -460,30 +533,31 @@ export default function SurveySectionPage() {
   // Fallback method for localStorage-based submission
   const submitFinalSurveyFromLocalStorage = async () => {
     try {
-      // Fetch all questions first
-      const response = await apiClient.get("/api/v1/question")
-      const questionsData = response.data
-      const allQuestions = questionsData?.data || questionsData || []
+      // Convert localStorage answers to dataResult format
+      const dataResult: Array<{
+        section: string;
+        question: string[];
+        answer: string[];
+      }> = []
 
-      const surveyResult = sections?.map((section: Section) => {
+      // Iterate through all sections and collect answers
+      sections?.forEach((section: Section) => {
         const sectionAnswers = JSON.parse(localStorage.getItem(`answers-${section.id}`) || "{}")
 
-        // Find questions for this section
-        const sectionQuestions = allQuestions.filter((q: any) => {
-          return q.sectionTitle === section.title || String(q.sectionId) === String(section.id)
-        })
+        Object.keys(sectionAnswers).forEach((questionId) => {
+          const answerData = sectionAnswers[questionId]
 
-        // Map answers using question IDs
-        const questionIds = sectionQuestions.map((q: any) => String(q.id))
-        const answers = questionIds.map((qId: string) => {
-          return sectionAnswers[qId] || ""
+          // Handle both new format (AnswerData) and old format (direct value)
+          if (answerData && typeof answerData === 'object' && 'answer' in answerData) {
+            // New format with AnswerData structure
+            dataResult.push({
+              section: answerData.sectionTitle,
+              question: [answerData.questionText],
+              answer: Array.isArray(answerData.answer) ? answerData.answer : [answerData.answer]
+            })
+          }
+          // If old format, we skip it or could handle differently if needed
         })
-
-        return {
-          section: section.title,
-          question: questionIds,
-          answer: answers,
-        }
       })
 
       // Get selected date from localStorage
@@ -515,7 +589,7 @@ export default function SurveySectionPage() {
         surveyResult: [
           {
             date: formattedDate,
-            dataResult: surveyResult || [],
+            dataResult: dataResult,
             conclutionResult: "submit",
           }
         ],
@@ -557,7 +631,7 @@ export default function SurveySectionPage() {
         return (
           <RadioGroup
             value={(currentAnswer as string) || ""}
-            onValueChange={(val) => handleAnswerChange(question.id, val)}
+            onValueChange={(val) => handleAnswerChange(question.id, val, question.text)}
             className="space-y-2"
           >
             {question.options?.map((opt: string, i: number) => (
@@ -580,9 +654,9 @@ export default function SurveySectionPage() {
                   checked={checkboxAnswers.includes(opt)}
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      handleAnswerChange(question.id, [...checkboxAnswers, opt])
+                      handleAnswerChange(question.id, [...checkboxAnswers, opt], question.text)
                     } else {
-                      handleAnswerChange(question.id, checkboxAnswers.filter((a) => a !== opt))
+                      handleAnswerChange(question.id, checkboxAnswers.filter((a) => a !== opt), question.text)
                     }
                   }}
                 />
@@ -596,7 +670,7 @@ export default function SurveySectionPage() {
         return (
           <Input
             value={(currentAnswer as string) || ""}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question.text)}
             placeholder="Masukkan jawaban Anda..."
           />
         )
@@ -605,7 +679,7 @@ export default function SurveySectionPage() {
         return (
           <Textarea
             value={(currentAnswer as string) || ""}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question.text)}
             placeholder="Masukkan jawaban Anda..."
             rows={4}
           />
@@ -615,7 +689,7 @@ export default function SurveySectionPage() {
         return (
           <RadioGroup
             value={(currentAnswer as string) || ""}
-            onValueChange={(val) => handleAnswerChange(question.id, val)}
+            onValueChange={(val) => handleAnswerChange(question.id, val, question.text)}
             className="flex space-x-4"
           >
             {(question.options || ["1", "2", "3", "4", "5"]).map((opt, i) => (
@@ -631,7 +705,7 @@ export default function SurveySectionPage() {
         return (
           <Input
             value={(currentAnswer as string) || ""}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question.text)}
             placeholder="Masukkan jawaban Anda..."
           />
         )
@@ -695,13 +769,10 @@ export default function SurveySectionPage() {
             {questionsLoading ? (
               <SurveyStepSkeleton />
             ) : questions && questions.length > 0 ? (
-              questions.map((question, index) => (
+              questions.map((question) => (
                 <div key={question.id} className="group">
                   <div className="bg-white rounded-2xl shadow-2xl border-2 border-black p-8 hover:shadow-2xl transition-all duration-300">
                     <div className="flex items-start gap-4 mb-6">
-                      {/* <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                        {index + 1}
-                      </div> */}
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-black mb-2 leading-relaxed">
                           {question.text}

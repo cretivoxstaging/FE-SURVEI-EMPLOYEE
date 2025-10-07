@@ -388,7 +388,11 @@ export default function SurveyPage() {
                   ></div>
                 </div>
                 <p className="text-xs text-gray-600 mt-2">
-                  Started: {new Date(progressData.startTime).toLocaleDateString()}
+                  Started: {new Date(progressData.startTime).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  })}
                 </p>
               </div>
             </div>

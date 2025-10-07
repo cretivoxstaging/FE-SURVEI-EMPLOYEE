@@ -8,11 +8,15 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AppSidebar } from "@/components/app-sidebar"
-import { Search, Calendar, X } from "lucide-react"
+import { Search, Calendar, X, Download } from "lucide-react"
 import { useEmployee } from "@/hooks/use-employee"
 import { useSurveyResults } from "@/hooks/use-survey-results"
 import { SurveyResultsDialog } from "@/components/survey-results-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import * as XLSX from 'xlsx'
+import { useQuestions } from "@/hooks/use-questions"
+import { apiClient } from "@/lib/api-client"
+import type { ConfigQuestion, ApiQuestion } from "@/types/survey"
 
 interface Employee {
   id: string
@@ -46,13 +50,250 @@ export default function EmployeePage() {
   const { employees = [], isLoading } = useEmployee()
   const { getAllSurveyResults } = useSurveyResults()
 
-  // Debug logging
-  console.log("📊 Employee Page - Survey Results:", getAllSurveyResults.data?.data)
-  console.log("📊 Employee Page - Survey Loading:", getAllSurveyResults.isLoading)
-  console.log("📊 Employee Page - Survey Error:", getAllSurveyResults.error)
+  // Get questions for mapping
+  const { questions: allQuestions } = useQuestions("", "", { enabled: true })
+
   const [searchTerm, setSearchTerm] = useState("")
   const [employeesWithSurvey, setEmployeesWithSurvey] = useState<Employee[]>([])
   const [selectedYear, setSelectedYear] = useState<string>("all")
+
+  // Function to export survey responses to Excel using same logic as Survey Results
+  const exportToExcel = async () => {
+    // Filter employees who have survey responses
+    const employeesWithResponses = filteredEmployees.filter(emp => emp.hasSurvey && emp.surveyResult)
+
+    if (employeesWithResponses.length === 0) {
+      alert('No survey responses found to export.')
+      return
+    }
+
+    console.log(`🔍 Starting Excel export for ${employeesWithResponses.length} employees`)
+
+    // Create question map using same logic as Survey Results
+    const questionMap = new Map<string, ConfigQuestion>()
+
+    // Use processed questions first (same as Survey Results)
+    allQuestions?.forEach((q) => {
+      const stringId = String(q.id)
+      questionMap.set(stringId, q)
+      questionMap.set(q.id, q)
+      if (typeof q.id === "number") {
+        questionMap.set(String(q.id), q)
+      }
+    })
+
+
+    // If we don't have processed questions, fetch raw API data
+    if (questionMap.size === 0) {
+      try {
+        const response = await apiClient.get("/api/v1/question")
+        const rawQuestions = response.data?.data || response.data || []
+
+        rawQuestions.forEach((q: ApiQuestion) => {
+          const stringId = String(q.id)
+          const configQuestion: ConfigQuestion = {
+            id: stringId,
+            text: q.text || q.question || "",
+            type: q.type === "multiple-choice" ? "multiple-choice" :
+              q.type === "textarea" ? "textarea" :
+                q.type === "rating" ? "rating" : "textarea",
+            options: q.option ? Object.values(q.option) : undefined,
+            required: Boolean(q.required),
+          }
+          questionMap.set(stringId, configQuestion)
+          questionMap.set(String(q.id), configQuestion)
+          if (typeof q.id === "number") {
+            questionMap.set(String(q.id), configQuestion)
+          }
+        })
+      } catch (error) {
+        console.error("Failed to fetch questions for export:", error)
+      }
+    }
+
+    console.log(`🔍 Question Map created:`, {
+      totalQuestions: allQuestions?.length || 0,
+      mapSize: questionMap.size,
+      allKeys: Array.from(questionMap.keys()).sort((a, b) => Number(a) - Number(b)),
+      sampleQuestions: Array.from(questionMap.values()).slice(0, 5).map(q => ({
+        id: q.id,
+        text: q.text?.substring(0, 50) + "...",
+        type: q.type,
+      }))
+    })
+
+    // Force fetch all questions to ensure we have complete coverage
+    try {
+      console.log("🔍 Force fetching all questions to ensure complete coverage...")
+      const response = await apiClient.get("/api/v1/question")
+      const rawQuestions = response.data?.data || response.data || []
+      console.log(`🔍 Raw questions fetched:`, rawQuestions.length)
+
+      rawQuestions.forEach((q: ApiQuestion) => {
+        const stringId = String(q.id)
+        if (!questionMap.has(stringId)) {
+          const configQuestion: ConfigQuestion = {
+            id: stringId,
+            text: q.text || q.question || "",
+            type: q.type === "multiple-choice" ? "multiple-choice" :
+              q.type === "textarea" ? "textarea" :
+                q.type === "rating" ? "rating" : "textarea",
+            options: q.option ? Object.values(q.option) : undefined,
+            required: Boolean(q.required),
+          }
+          questionMap.set(stringId, configQuestion)
+          questionMap.set(String(q.id), configQuestion)
+          if (typeof q.id === "number") {
+            questionMap.set(String(q.id), configQuestion)
+          }
+        }
+      })
+
+      console.log(`🔍 Question Map after force fetch:`, {
+        mapSize: questionMap.size,
+        allKeys: Array.from(questionMap.keys()).sort((a, b) => Number(a) - Number(b)),
+      })
+    } catch (error) {
+      console.error("Failed to force fetch questions:", error)
+    }
+
+    // First, collect all unique question IDs from all survey responses
+    const allQuestionIds = new Set<string>()
+    employeesWithResponses.forEach(employee => {
+      if (employee.surveyResult?.surveyResult && Array.isArray(employee.surveyResult.surveyResult)) {
+        const latestSubmission = employee.surveyResult.surveyResult[employee.surveyResult.surveyResult.length - 1]
+        if (latestSubmission?.dataResult && Array.isArray(latestSubmission.dataResult)) {
+          latestSubmission.dataResult.forEach((sectionResult) => {
+            if (sectionResult.question && Array.isArray(sectionResult.question)) {
+              sectionResult.question.forEach(qId => {
+                allQuestionIds.add(String(qId))
+              })
+            }
+          })
+        }
+      }
+    })
+
+    console.log(`🔍 All unique question IDs found:`, Array.from(allQuestionIds).sort((a, b) => Number(a) - Number(b)))
+    console.log(`🔍 Total unique questions:`, allQuestionIds.size)
+
+    // Process data using same logic as Survey Results - directly from surveyResult.dataResult
+    const excelData = employeesWithResponses.map((employee, index) => {
+      const baseData: Record<string, string | number> = {
+        'No': index + 1,
+        'Employee Name': employee.name,
+        'Email': employee.email,
+        'Position': employee.job_position,
+        'Department': employee.department,
+        'Branch': employee.branch,
+        'Survey Status': 'Submitted',
+        'Created At': employee.surveyResult?.createdAt || '',
+      }
+
+      // Initialize all questions with empty values first
+      console.log(`🔍 Initializing questions for ${employee.name}:`, allQuestionIds.size)
+      allQuestionIds.forEach(questionId => {
+        const question = questionMap.get(questionId) ||
+          questionMap.get(String(questionId)) ||
+          questionMap.get(String(Number(questionId)))
+        const questionText = question?.text || `Question ${questionId}`
+        baseData[questionText] = ''
+        console.log(`🔍 Initialized: ${questionId} -> "${questionText}" (found: ${!!question})`)
+      })
+
+      // Process survey responses using same logic as Survey Results
+      if (employee.surveyResult?.surveyResult && Array.isArray(employee.surveyResult.surveyResult)) {
+        const latestSubmission = employee.surveyResult.surveyResult[employee.surveyResult.surveyResult.length - 1]
+        if (latestSubmission?.dataResult && Array.isArray(latestSubmission.dataResult)) {
+          console.log(`🔍 Processing ${employee.name}:`, {
+            totalSections: latestSubmission.dataResult.length,
+            sections: latestSubmission.dataResult.map(s => ({
+              section: s.section,
+              questionCount: Array.isArray(s.question) ? s.question.length : 0,
+              answerCount: Array.isArray(s.answer) ? s.answer.length : 0
+            }))
+          })
+
+          latestSubmission.dataResult.forEach((sectionResult) => {
+            if (sectionResult.section && sectionResult.question && sectionResult.answer) {
+              const questions = Array.isArray(sectionResult.question) ? sectionResult.question : []
+              const answers = Array.isArray(sectionResult.answer) ? sectionResult.answer : []
+
+              questions.forEach((questionId, qIndex) => {
+                // Try multiple ways to find the question
+                let question = questionMap.get(String(questionId)) ||
+                  questionMap.get(questionId) ||
+                  questionMap.get(String(Number(questionId)))
+
+                // If still not found, try to find by exact match in all questions
+                if (!question && allQuestions) {
+                  question = allQuestions.find(q => String(q.id) === String(questionId))
+                }
+
+                const answer = answers[qIndex] || ''
+                const questionText = question?.text || `Question ${questionId}`
+
+                console.log(`🔍 Mapping question ${questionId}: "${questionText}" = "${answer}" (found: ${!!question})`)
+                baseData[questionText] = answer
+              })
+            }
+          })
+        }
+      }
+
+      const questionKeys = Object.keys(baseData).filter(key =>
+        !['No', 'Employee Name', 'Email', 'Position', 'Department', 'Branch', 'Survey Status', 'Created At'].includes(key)
+      )
+
+      console.log(`🔍 Final data for ${employee.name}:`, {
+        totalKeys: Object.keys(baseData).length,
+        questionKeys: questionKeys.length,
+        questionKeysList: questionKeys
+      })
+
+      return baseData
+    })
+
+    console.log(`🔍 Excel Export Summary:`, {
+      totalEmployees: employeesWithResponses.length,
+      sampleData: excelData[0] ? {
+        employeeName: excelData[0]['Employee Name'],
+        totalColumns: Object.keys(excelData[0]).length,
+        questionColumns: Object.keys(excelData[0]).filter(key =>
+          !['No', 'Employee Name', 'Email', 'Position', 'Department', 'Branch', 'Survey Status', 'Created At'].includes(key)
+        ).length
+      } : null
+    })
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(excelData)
+
+    // Set column widths
+    const colWidths = [
+      { wch: 5 },   // No
+      { wch: 25 },  // Employee Name
+      { wch: 30 },  // Email
+      { wch: 20 },  // Position
+      { wch: 15 },  // Department
+      { wch: 15 },  // Branch
+      { wch: 15 },  // Survey Status
+      { wch: 20 },  // Created At
+    ]
+    ws['!cols'] = colWidths
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Survey Responses')
+
+    // Generate filename with current date
+    const currentDate = new Date().toISOString().split('T')[0]
+    const filename = `survey_responses_${currentDate}.xlsx`
+
+    // Save file
+    XLSX.writeFile(wb, filename)
+
+    console.log(`✅ Excel file exported successfully: ${filename}`)
+  }
 
   // Get available years for the year filter
   const availableYears = employeesWithSurvey
@@ -196,6 +437,16 @@ export default function EmployeePage() {
                   ⚠️ Survey data unavailable - showing employees without survey status
                 </p>
               )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={exportToExcel}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={filteredEmployees.filter(emp => emp.hasSurvey).length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export to Excel
+              </Button>
             </div>
           </div>
 
