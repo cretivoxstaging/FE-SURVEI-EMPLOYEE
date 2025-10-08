@@ -54,7 +54,7 @@ export function AppreciationChart({ data }: AppreciationChartProps) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-base sm:text-lg font-semibold">Do You Feel Appreciated At Work</CardTitle>
+        <CardTitle className="text-base sm:text-lg font-semibold">Feel Appreciated At Work</CardTitle>
         <p className="text-xs sm:text-sm text-gray-600">Employee perception of recognition and appreciation</p>
       </CardHeader>
       <CardContent>

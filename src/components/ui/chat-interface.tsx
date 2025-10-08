@@ -59,13 +59,13 @@ function AiAvatar({ src }: { src?: string }) {
 function TypingBubble() {
   return (
     <div
-      className="max-w-[75%] p-3 rounded-lg bg-gray-200 text-gray-800"
+      className="flex-1 p-4 rounded-xl bg-gray-100 text-gray-900 rounded-tl-none border border-gray-200"
       aria-live="polite"
       aria-label="AI is typing"
     >
-      <div className="flex items-center gap-1">
-        <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce [animation-delay:-0.2s]" />
-        <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce [animation-delay:-0.1s]" />
+      <div className="flex items-center gap-1.5">
+        <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce [animation-delay:-0.3s]" />
+        <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce [animation-delay:-0.15s]" />
         <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce" />
       </div>
     </div>
@@ -111,19 +111,17 @@ export function ChatInterface({ onClose }: { onClose: () => void }) {
             // - AI:   [Avatar] [Bubble]
             // - User: [Bubble] [Avatar]
             return (
-              <div key={idx} className={`mb-4 flex ${user ? "justify-end" : "justify-start"}`}>
-                <div className={`flex items-start gap-2 ${user ? "flex-row-reverse" : "flex-row"}`}>
+              <div key={idx} className={`mb-6 flex ${user ? "justify-end" : "justify-start"}`}>
+                <div className={`flex items-start gap-3 ${user ? "flex-row-reverse" : "flex-row"} max-w-[85%]`}>
                   {user ? <UserAvatar src={userAvatarUrl} /> : <AiAvatar src={aiAvatarUrl} />}
 
                   <div
-                    className={`max-w-[75%] p-3 rounded-lg whitespace-pre-wrap break-words ${
-                      user ? "bg-black text-white" : "bg-gray-200 text-gray-800"
-                    }`}
+                    className={`flex-1 p-4 rounded-xl ${user
+                        ? "bg-black text-white rounded-tr-none"
+                        : "bg-gray-100 text-gray-900 rounded-tl-none border border-gray-200"
+                      }`}
                   >
-                    <MarkdownRenderer
-                      className={`prose prose-sm max-w-none ${user ? "prose-invert" : ""}`}
-                      content={content}
-                    />
+                    <MarkdownRenderer content={content} />
                   </div>
                 </div>
               </div>
@@ -132,8 +130,8 @@ export function ChatInterface({ onClose }: { onClose: () => void }) {
 
           {/* Typing indicator saat streaming */}
           {status === "streaming" && (
-            <div className="mb-4 flex justify-start">
-              <div className="flex items-start gap-2">
+            <div className="mb-6 flex justify-start">
+              <div className="flex items-start gap-3 max-w-[85%]">
                 <AiAvatar />
                 <TypingBubble />
               </div>

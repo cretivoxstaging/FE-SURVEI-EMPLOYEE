@@ -564,12 +564,11 @@ export default function EmployeePage() {
                             employeeId={employee.id}
                             employeeName={employee.name}
                           >
-                            <Button
+                            <Badge
                               className="bg-black text-white hover:bg-gray-800"
-                              size="sm"
                             >
                               View Survey
-                            </Button>
+                            </Badge>
                           </SurveyResultsDialog>
                         ) : (
                           <Badge className="bg-gray-200 text-gray-700">No Survey</Badge>

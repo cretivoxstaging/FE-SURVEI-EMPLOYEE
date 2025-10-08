@@ -11,10 +11,10 @@ import MarkdownRenderer from "./markdown-renderer";
 
 function TypingBubble() {
   return (
-    <div className="flex items-center gap-1">
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.2s]" />
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.1s]" />
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce" />
+    <div className="flex items-center gap-1.5">
+      <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce [animation-delay:-0.3s]" />
+      <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce [animation-delay:-0.15s]" />
+      <span className="inline-block h-2 w-2 rounded-full bg-gray-500 animate-bounce" />
     </div>
   );
 }
@@ -130,23 +130,20 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
           )}
 
           {messages.map((message) => (
-            <div key={message.id} className={`mb-4 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`flex items-start gap-2 ${message.role === "user" ? "flex-row-reverse" : "flex-row"} max-w-[85%]`}>
-                <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${message.role === "user" ? "bg-black text-white" : "bg-gray-200 text-gray-700"}`}>
+            <div key={message.id} className={`mb-6 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`flex items-start gap-3 ${message.role === "user" ? "flex-row-reverse" : "flex-row"} max-w-[85%]`}>
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${message.role === "user" ? "bg-black text-white" : "bg-gray-200 text-gray-700"}`}>
                   {message.role === "user" ? "U" : "AI"}
                 </div>
 
                 <div className="flex-1">
                   <div
-                    className={`px-3 py-2 rounded-lg whitespace-pre-wrap break-words text-sm ${message.role === "user"
-                      ? "bg-black text-white"
-                      : "bg-gray-100 text-gray-800"
+                    className={`p-4 rounded-xl ${message.role === "user"
+                      ? "bg-black text-white rounded-tr-none"
+                      : "bg-gray-100 text-gray-900 rounded-tl-none border border-gray-200"
                       }`}
                   >
-                    <MarkdownRenderer
-                      className="prose prose-sm max-w-none [&>*]:text-inherit [&>*]:my-1"
-                      content={message.content}
-                    />
+                    <MarkdownRenderer content={message.content} />
                   </div>
                 </div>
               </div>
@@ -155,18 +152,15 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
 
           {/* Streaming message */}
           {isStreaming && streamingText && (
-            <div className="mb-4 flex justify-start">
-              <div className="flex items-start gap-2 max-w-[85%]">
-                <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium bg-gray-200 text-gray-700">
+            <div className="mb-6 flex justify-start">
+              <div className="flex items-start gap-3 max-w-[85%]">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold bg-gray-200 text-gray-700">
                   AI
                 </div>
                 <div className="flex-1">
-                  <div className="px-3 py-2 rounded-lg bg-gray-100 text-gray-800 text-sm">
-                    <MarkdownRenderer
-                      className="prose prose-sm max-w-none [&>*]:text-inherit [&>*]:my-1"
-                      content={streamingText}
-                    />
-                    <span className="animate-pulse text-gray-500 font-bold">|</span>
+                  <div className="p-4 rounded-xl bg-gray-100 text-gray-900 rounded-tl-none border border-gray-200">
+                    <MarkdownRenderer content={streamingText} />
+                    <span className="animate-pulse text-gray-500 font-bold ml-1">|</span>
                   </div>
                 </div>
               </div>
@@ -175,13 +169,13 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
 
           {/* Typing indicator */}
           {(status === "analyzing" || isLoading) && !isStreaming && (
-            <div className="mb-4 flex justify-start">
-              <div className="flex items-start gap-2 max-w-[85%]">
-                <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium bg-gray-200 text-gray-700">
+            <div className="mb-6 flex justify-start">
+              <div className="flex items-start gap-3 max-w-[85%]">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold bg-gray-200 text-gray-700">
                   AI
                 </div>
                 <div className="flex-1">
-                  <div className="px-3 py-2 rounded-lg bg-gray-100 text-gray-800 text-sm">
+                  <div className="p-4 rounded-xl bg-gray-100 text-gray-900 rounded-tl-none border border-gray-200">
                     <TypingBubble />
                   </div>
                 </div>
