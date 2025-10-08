@@ -157,16 +157,31 @@ export default function EmployeePage() {
       console.error("Failed to force fetch questions:", error)
     }
 
-    // First, collect all unique question IDs from all survey responses
-    const allQuestionIds = new Set<string>()
+    // First, collect all unique questions (section + question text) from all survey responses
+    // Use Map with section+question as key to preserve all questions (including duplicates in different sections)
+    const allQuestionKeys = new Map<string, { section: string; question: string; index: number }>()
+    let questionIndex = 0
+
     employeesWithResponses.forEach(employee => {
       if (employee.surveyResult?.surveyResult && Array.isArray(employee.surveyResult.surveyResult)) {
         const latestSubmission = employee.surveyResult.surveyResult[employee.surveyResult.surveyResult.length - 1]
         if (latestSubmission?.dataResult && Array.isArray(latestSubmission.dataResult)) {
           latestSubmission.dataResult.forEach((sectionResult) => {
             if (sectionResult.question && Array.isArray(sectionResult.question)) {
-              sectionResult.question.forEach(qId => {
-                allQuestionIds.add(String(qId))
+              sectionResult.question.forEach((q, idx) => {
+                const section = sectionResult.section || 'Unknown Section'
+                const questionText = Array.isArray(q) ? q[0] : q // Handle both string and array
+                if (questionText) {
+                  // Create unique key: section + question + position
+                  const uniqueKey = `${section}::${questionText}::${idx}`
+                  if (!allQuestionKeys.has(uniqueKey)) {
+                    allQuestionKeys.set(uniqueKey, {
+                      section,
+                      question: questionText,
+                      index: questionIndex++
+                    })
+                  }
+                }
               })
             }
           })
@@ -174,8 +189,8 @@ export default function EmployeePage() {
       }
     })
 
-    console.log(`🔍 All unique question IDs found:`, Array.from(allQuestionIds).sort((a, b) => Number(a) - Number(b)))
-    console.log(`🔍 Total unique questions:`, allQuestionIds.size)
+    console.log(`🔍 All questions found (including duplicates):`, Array.from(allQuestionKeys.values()))
+    console.log(`🔍 Total questions:`, allQuestionKeys.size)
 
     // Process data using same logic as Survey Results - directly from surveyResult.dataResult
     const excelData = employeesWithResponses.map((employee, index) => {
@@ -190,15 +205,12 @@ export default function EmployeePage() {
         'Created At': employee.surveyResult?.createdAt || '',
       }
 
-      // Initialize all questions with empty values first
-      console.log(`🔍 Initializing questions for ${employee.name}:`, allQuestionIds.size)
-      allQuestionIds.forEach(questionId => {
-        const question = questionMap.get(questionId) ||
-          questionMap.get(String(questionId)) ||
-          questionMap.get(String(Number(questionId)))
-        const questionText = question?.text || `Question ${questionId}`
-        baseData[questionText] = ''
-        console.log(`🔍 Initialized: ${questionId} -> "${questionText}" (found: ${!!question})`)
+      // Initialize all questions with empty values first using new format
+      console.log(`🔍 Initializing questions for ${employee.name}:`, allQuestionKeys.size)
+      allQuestionKeys.forEach((value) => {
+        const columnName = `${value.section} - ${value.question}`
+        baseData[columnName] = ''
+        console.log(`🔍 Initialized: "${columnName}"`)
       })
 
       // Process survey responses using same logic as Survey Results
@@ -216,25 +228,22 @@ export default function EmployeePage() {
 
           latestSubmission.dataResult.forEach((sectionResult) => {
             if (sectionResult.section && sectionResult.question && sectionResult.answer) {
+              const section = sectionResult.section
               const questions = Array.isArray(sectionResult.question) ? sectionResult.question : []
               const answers = Array.isArray(sectionResult.answer) ? sectionResult.answer : []
 
-              questions.forEach((questionId, qIndex) => {
-                // Try multiple ways to find the question
-                let question = questionMap.get(String(questionId)) ||
-                  questionMap.get(questionId) ||
-                  questionMap.get(String(Number(questionId)))
-
-                // If still not found, try to find by exact match in all questions
-                if (!question && allQuestions) {
-                  question = allQuestions.find(q => String(q.id) === String(questionId))
-                }
-
+              questions.forEach((q, qIndex) => {
+                const questionText = Array.isArray(q) ? q[0] : q // Handle both string and array format
                 const answer = answers[qIndex] || ''
-                const questionText = question?.text || `Question ${questionId}`
 
-                console.log(`🔍 Mapping question ${questionId}: "${questionText}" = "${answer}" (found: ${!!question})`)
-                baseData[questionText] = answer
+                // Create column name with section prefix to avoid conflicts
+                const columnName = `${section} - ${questionText}`
+
+                // Handle array answers (join with comma)
+                const answerValue = Array.isArray(answer) ? answer.join(', ') : answer
+
+                console.log(`🔍 Mapping: "${columnName}" = "${answerValue}"`)
+                baseData[columnName] = answerValue
               })
             }
           })

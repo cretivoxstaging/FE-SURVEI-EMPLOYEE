@@ -6,9 +6,7 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Check, ChevronsUpDown, Calendar } from "lucide-react"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useEmployee } from "@/hooks/use-employee"
@@ -21,7 +19,6 @@ import Image from "next/image"
 export default function SurveyPage() {
   const [open, setOpen] = useState(false)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("")
-  const [selectedDate, setSelectedDate] = useState<string>("")
   const { sections, isLoading: sectionsLoading, isError: sectionsError, error: sectionsErrorObj } = useSection()
   const { employees, isLoading } = useEmployee()
   const router = useRouter()
@@ -105,18 +102,15 @@ export default function SurveyPage() {
       return
     }
 
-    // Check if date is selected
-    if (!selectedDate) {
-      alert("Please select a survey date before starting")
-      return
-    }
+    // Auto-generate current date
+    const currentDate = new Date().toISOString()
 
-    // Initialize survey progress with selected date
+    // Initialize survey progress
     initializeProgress(selectedEmployee.id, selectedEmployee.name, sections[0].id)
 
     // simpan employee dan tanggal di localStorage (dipakai di section)
     localStorage.setItem("selectedEmployee", JSON.stringify(selectedEmployee))
-    localStorage.setItem("selectedSurveyDate", selectedDate)
+    localStorage.setItem("selectedSurveyDate", currentDate)
 
     // ambil section pertama
     const firstSectionId = sections[0].id
@@ -329,28 +323,6 @@ export default function SurveyPage() {
             </div>
           )}
 
-          {/* Date Selection Form */}
-          {selectedEmployeeData && (
-            <div className="w-full mb-6">
-              <Label htmlFor="survey-date" className="text-sm font-bold text-black mb-2 block">
-                Survey Date
-              </Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="survey-date"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="pl-10 bg-white border-2 border-black rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-gray-600"
-                  placeholder="Select survey date"
-                />
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                Select the date for this survey submission
-              </p>
-            </div>
-          )}
 
           {/* Debug info untuk sections */}
           {/* {sections && (
@@ -412,7 +384,6 @@ export default function SurveyPage() {
                   clearProgress()
                   setSelectedEmployeeId("")
                   setSelectedEmployee(null)
-                  setSelectedDate("")
                 }}
                 variant="outline"
                 className="w-full border-2 border-gray-300 hover:bg-gray-100 text-gray-600 font-medium py-3 rounded-xl transition-all duration-200"
@@ -424,7 +395,7 @@ export default function SurveyPage() {
             <Button
               onClick={handleStartSurvey}
               className="w-full h-12 font-medium rounded-xl transition-all duration-200 border-2 bg-black hover:bg-gray-800 text-white border-black shadow-lg hover:shadow-xl"
-              disabled={!selectedEmployeeId || !selectedDate || sectionsLoading || !sections || sections.length === 0}
+              disabled={!selectedEmployeeId || sectionsLoading || !sections || sections.length === 0}
             >
               {sectionsLoading ? (
                 <div className="flex items-center gap-2">
@@ -433,8 +404,6 @@ export default function SurveyPage() {
                 </div>
               ) : !sections || sections.length === 0 ? (
                 "No Sections Available"
-              ) : !selectedDate ? (
-                "Select Date to Start Survey"
               ) : (
                 "Start Survey"
               )}

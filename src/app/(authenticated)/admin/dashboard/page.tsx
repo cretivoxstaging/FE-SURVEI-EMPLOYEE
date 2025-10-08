@@ -209,14 +209,14 @@ export default function Page() {
       </SidebarInset>
       {/* Floating Chat Button and Survey Chat Interface */}
       {isChatOpen && (
-        <div className="fixed bottom-20 right-4 z-50">
+        <div className="fixed bottom-2 right-2 sm:bottom-20 sm:right-4 z-50">
           <SurveyChatInterface onClose={toggleChat} />
         </div>
       )}
 
       <Button
         onClick={toggleChat}
-        className="fixed bottom-4 right-4 rounded-full p-4 shadow-lg z-50"
+        className="fixed bottom-4 right-4 rounded-full p-3 sm:p-4 shadow-lg z-40 w-12 h-12 sm:w-14 sm:h-14"
         size="icon"
         aria-label={isChatOpen ? "Tutup chat" : "Buka chat"}
       >

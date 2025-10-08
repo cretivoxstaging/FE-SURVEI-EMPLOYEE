@@ -5,42 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Send, X, BarChart3, Trash2 } from "lucide-react";
 import { useChatAnalyze } from "@/hooks/use-chat-analyze";
 import MarkdownRenderer from "./markdown-renderer";
 
-function UserAvatar() {
-  return (
-    <Avatar className="h-10 w-10 shrink-0 ring-2 ring-purple-200 shadow-md">
-      <AvatarImage src="/avatars/user.png" alt="User" />
-      <AvatarFallback className="bg-gradient-to-br from-purple-100 to-purple-200 text-purple-700 font-semibold text-sm border border-purple-300">
-        U
-      </AvatarFallback>
-    </Avatar>
-  );
-}
-
-function AiAvatar() {
-  return (
-    <Avatar className="h-10 w-10 shrink-0 ring-2 ring-purple-200 shadow-md">
-      <AvatarImage src="/avatars/ai.png" alt="AI" />
-      <AvatarFallback className="bg-gradient-to-br from-purple-200 to-purple-300 text-purple-700 font-semibold text-sm border border-purple-400">
-        AI
-      </AvatarFallback>
-    </Avatar>
-  );
-}
-
 function TypingBubble() {
   return (
-    <div className="max-w-[75%] p-3 rounded-lg bg-purple-50 text-purple-600">
-      <div className="flex items-center gap-1">
-        <span className="inline-block h-2 w-2 rounded-full bg-purple-400 animate-bounce [animation-delay:-0.2s]" />
-        <span className="inline-block h-2 w-2 rounded-full bg-purple-400 animate-bounce [animation-delay:-0.1s]" />
-        <span className="inline-block h-2 w-2 rounded-full bg-purple-400 animate-bounce" />
-      </div>
+    <div className="flex items-center gap-1">
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.2s]" />
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.1s]" />
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce" />
     </div>
   );
 }
@@ -88,34 +62,28 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <Card className="flex flex-col h-[800px] w-[700px] shadow-2xl rounded-2xl overflow-hidden border-0 bg-white">
-      <CardHeader className="flex flex-row items-center justify-between p-6 border-b bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-200 rounded-xl">
-            <BarChart3 className="h-6 w-6 text-purple-700" />
-          </div>
-          <div>
-            <CardTitle className="text-xl font-bold text-purple-700">Survey Analytics AI</CardTitle>
-            <p className="text-sm text-purple-600">Powered by Gemini AI</p>
-          </div>
-        </div>
+    <Card className="flex flex-col h-[85vh] max-h-[800px] w-[95vw] sm:w-[90vw] md:w-[500px] lg:w-[600px] max-w-[600px] shadow-lg rounded-lg overflow-hidden border bg-white">
+      <CardHeader className="flex flex-row items-center justify-between px-4 py-3 border-b bg-white">
         <div className="flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold text-gray-800">Survey Analytics</CardTitle>
+        </div>
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={clearMessages}
-            className="text-purple-600 hover:text-purple-700 hover:bg-purple-200 rounded-xl"
+            className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5 text-gray-600" />
           </Button>
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={onClose}
-            className="text-purple-600 hover:text-purple-700 hover:bg-purple-200 rounded-xl"
+            className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md"
             aria-label="Close chat"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4 text-gray-600" />
           </Button>
         </div>
       </CardHeader>
@@ -123,29 +91,22 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
       <CardContent className="flex-1 p-4 overflow-hidden">
         <ScrollArea className="h-full pr-4">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full px-6">
-              <div className="text-center mb-8">
-                <div className="relative mb-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-300 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                    <BarChart3 className="h-10 w-10 text-purple-700" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                  </div>
+            <div className="flex flex-col items-center justify-center h-full px-4">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center mx-auto mb-3">
+                  <BarChart3 className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-purple-700 mb-2">Survey Analytics Assistant</h3>
-                <p className="text-purple-600 text-lg">Tanyakan tentang data survey, analisis, dan insights</p>
+                <p className="text-gray-500 text-sm">Tanyakan tentang data survey dan analisis</p>
               </div>
 
-              <div className="w-full max-w-lg">
-                <p className="text-sm font-semibold text-gray-700 mb-4 text-center">Pertanyaan yang sering ditanyakan:</p>
-                <div className="grid grid-cols-1 gap-3">
+              <div className="w-full max-w-md">
+                <div className="grid grid-cols-1 gap-2">
                   {suggestedQuestions.map((item, index) => (
                     <Button
                       key={index}
                       variant="outline"
                       size="sm"
-                      className="w-full text-left justify-start h-auto p-4 rounded-xl border-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 group"
+                      className="w-full text-left justify-start h-auto px-3 py-2 text-xs rounded-lg border hover:bg-gray-50 transition-colors"
                       onClick={() => {
                         const syntheticEvent = {
                           target: { value: item.question }
@@ -160,18 +121,7 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
                         }, 100);
                       }}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl group-hover:scale-110 transition-transform duration-200">
-                          {item.icon}
-                        </span>
-                        <div className="flex-1">
-                          <p className="font-medium text-purple-800 text-sm">{item.question}</p>
-                          <p className="text-xs text-purple-500">{item.category}</p>
-                        </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        </div>
-                      </div>
+                      <p className="text-gray-700">{item.question}</p>
                     </Button>
                   ))}
                 </div>
@@ -180,41 +130,23 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
           )}
 
           {messages.map((message) => (
-            <div key={message.id} className={`mb-6 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`flex items-start gap-3 ${message.role === "user" ? "flex-row-reverse" : "flex-row"} max-w-[85%]`}>
-                {message.role === "user" ? <UserAvatar /> : <AiAvatar />}
+            <div key={message.id} className={`mb-4 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`flex items-start gap-2 ${message.role === "user" ? "flex-row-reverse" : "flex-row"} max-w-[85%]`}>
+                <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${message.role === "user" ? "bg-black text-white" : "bg-gray-200 text-gray-700"}`}>
+                  {message.role === "user" ? "U" : "AI"}
+                </div>
 
                 <div className="flex-1">
                   <div
-                    className={`p-4 rounded-2xl whitespace-pre-wrap break-words shadow-sm ${message.role === "user"
-                      ? "bg-gradient-to-br from-purple-100 to-purple-200 text-purple-800 border border-purple-300 rounded-br-md"
-                      : "bg-white text-gray-800 border border-purple-200 rounded-bl-md"
+                    className={`px-3 py-2 rounded-lg whitespace-pre-wrap break-words text-sm ${message.role === "user"
+                      ? "bg-black text-white"
+                      : "bg-gray-100 text-gray-800"
                       }`}
                   >
                     <MarkdownRenderer
-                      className={`prose prose-sm max-w-none ${message.role === "user" ? "prose-invert" : ""
-                        }`}
+                      className="prose prose-sm max-w-none [&>*]:text-inherit [&>*]:my-1"
                       content={message.content}
                     />
-                  </div>
-
-                  {message.role === "assistant" && (
-                    <div className="mt-3 flex items-center gap-2">
-                      {message.hasData && (
-                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200 rounded-full px-3 py-1">
-                          📊 Data Survey
-                        </Badge>
-                      )}
-                      {message.isFallback && (
-                        <Badge variant="outline" className="text-xs text-orange-600 border-orange-300 bg-orange-50 rounded-full px-3 py-1">
-                          ⚠️ Fallback Response
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  <div className={`text-xs text-gray-400 mt-2 ${message.role === "user" ? "text-right" : "text-left"}`}>
-                    {message.timestamp.toLocaleTimeString()}
                   </div>
                 </div>
               </div>
@@ -223,21 +155,18 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
 
           {/* Streaming message */}
           {isStreaming && streamingText && (
-            <div className="mb-6 flex justify-start">
-              <div className="flex items-start gap-3 max-w-[85%]">
-                <AiAvatar />
+            <div className="mb-4 flex justify-start">
+              <div className="flex items-start gap-2 max-w-[85%]">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium bg-gray-200 text-gray-700">
+                  AI
+                </div>
                 <div className="flex-1">
-                  <div className="p-4 rounded-2xl bg-white text-gray-800 border border-purple-200 rounded-bl-md shadow-sm">
+                  <div className="px-3 py-2 rounded-lg bg-gray-100 text-gray-800 text-sm">
                     <MarkdownRenderer
-                      className="prose prose-sm max-w-none"
+                      className="prose prose-sm max-w-none [&>*]:text-inherit [&>*]:my-1"
                       content={streamingText}
                     />
-                    <span className="animate-pulse text-purple-500 font-bold">|</span>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs text-blue-600 border-blue-300 bg-blue-50 rounded-full px-3 py-1">
-                      ✨ Streaming...
-                    </Badge>
+                    <span className="animate-pulse text-gray-500 font-bold">|</span>
                   </div>
                 </div>
               </div>
@@ -246,17 +175,14 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
 
           {/* Typing indicator */}
           {(status === "analyzing" || isLoading) && !isStreaming && (
-            <div className="mb-6 flex justify-start">
-              <div className="flex items-start gap-3 max-w-[85%]">
-                <AiAvatar />
+            <div className="mb-4 flex justify-start">
+              <div className="flex items-start gap-2 max-w-[85%]">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium bg-gray-200 text-gray-700">
+                  AI
+                </div>
                 <div className="flex-1">
-                  <div className="p-4 rounded-2xl bg-white text-gray-800 border border-purple-200 rounded-bl-md shadow-sm">
+                  <div className="px-3 py-2 rounded-lg bg-gray-100 text-gray-800 text-sm">
                     <TypingBubble />
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs text-purple-600 border-purple-300 bg-purple-50 rounded-full px-3 py-1">
-                      🤖 AI sedang berpikir...
-                    </Badge>
                   </div>
                 </div>
               </div>
@@ -268,31 +194,26 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
         </ScrollArea>
       </CardContent>
 
-      <CardFooter className="p-6 border-t bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-        <form onSubmit={handleSubmit} className="flex w-full gap-3">
-          <div className="flex-1 relative">
-            <Input
-              placeholder="Tanyakan tentang data survey..."
-              value={input}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className="w-full pl-4 pr-12 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:ring-0 transition-all duration-200 bg-white shadow-sm"
-            />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <div className="w-2 h-2 bg-purple-300 rounded-full"></div>
-            </div>
-          </div>
+      <CardFooter className="p-3 border-t bg-white">
+        <form onSubmit={handleSubmit} className="flex w-full gap-2 items-center">
+          <Input
+            placeholder="Message Survey Analytics..."
+            value={input}
+            onChange={handleInputChange}
+            disabled={isLoading}
+            className="flex-1 text-sm rounded-lg border focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+          />
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
-            size="icon"
-            className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl w-12 h-12 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            size="sm"
+            className="bg-black hover:bg-gray-800 text-white rounded-lg px-3 h-9 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Kirim pesan"
           >
             {isLoading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4" />
             )}
           </Button>
         </form>
