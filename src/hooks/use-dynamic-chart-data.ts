@@ -35,8 +35,30 @@ export const useDynamicChartData = () => {
   const getAllSurveyResults = useQuery({
     queryKey: ["all-survey-results"],
     queryFn: async (): Promise<AllSurveyResultsResponse> => {
-      const response = await apiClient.get("/api/v1/survey");
-      return response.data;
+      console.log("🔍 Fetching survey results...");
+      try {
+        const response = await apiClient.get("/api/v1/survey");
+        console.log("🔍 Survey API response:", response);
+        console.log("🔍 Survey API response.data:", response.data);
+        console.log("🔍 Survey API response.data.data:", response.data?.data);
+        console.log(
+          "🔍 Survey API response.data.data length:",
+          response.data?.data?.length
+        );
+
+        // Debug: Show sample survey data structure
+        if (response.data?.data && response.data.data.length > 0) {
+          console.log(
+            "🔍 Sample survey data structure:",
+            JSON.stringify(response.data.data[0], null, 2)
+          );
+        }
+
+        return response.data;
+      } catch (error) {
+        console.log("🔍 Survey API error:", error);
+        throw error;
+      }
     },
   });
 
@@ -53,63 +75,103 @@ export const useDynamicChartData = () => {
 
   // Process data for Salary chart
   const getSalaryData = (): ChartData[] => {
-    const salaryQuestion = findQuestionByKeyword("salary");
-    if (!salaryQuestion || !getAllSurveyResults.data?.data) return [];
+    if (!getAllSurveyResults.data?.data) {
+      console.log("🔍 No survey data available for salary chart");
+      return [];
+    }
 
     const surveyResults = getAllSurveyResults.data.data;
     const responses: string[] = [];
 
-    // Extract salary responses from survey results
+    console.log(
+      "🔍 Salary: Processing survey results...",
+      surveyResults.length
+    );
+
+    // Extract salary responses from survey results - ONLY 1 response per employee
     surveyResults.forEach((result) => {
-      if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        // Process each survey submission
-        result.surveyResult.forEach((submission) => {
-          if (submission.dataResult && Array.isArray(submission.dataResult)) {
-            submission.dataResult.forEach((section) => {
-              if (section.question && section.answer) {
-                section.question.forEach((question, index) => {
-                  // Match by question text or section title
-                  if (
-                    question &&
-                    (question.includes(salaryQuestion.question) ||
-                      question.toLowerCase().includes("salary") ||
-                      section.section?.toLowerCase().includes("salary"))
-                  ) {
-                    // Map the answer to the correct option text
-                    const answer = section.answer[index];
-                    const optionMapping = {
-                      "0": "Very Bad",
-                      "1": "Bad",
-                      "2": "Average",
-                      "3": "Good",
-                      "4": "Very Good",
-                    };
+      console.log(
+        "🔍 Processing employee:",
+        result.employeeID,
+        "Name:",
+        result.name
+      );
 
-                    // If answer is a number (0-4), map it to text
-                    if (optionMapping[answer as keyof typeof optionMapping]) {
-                      const mappedAnswer =
-                        optionMapping[answer as keyof typeof optionMapping];
-                      console.log(
-                        `🔍 Salary: Mapping answer "${answer}" to "${mappedAnswer}"`
-                      );
-                      responses.push(mappedAnswer);
-                    } else {
-                      // If answer is already text, use it directly
-                      console.log(
-                        `🔍 Salary: Using answer directly: "${answer}"`
-                      );
-                      responses.push(answer);
-                    }
+      if (
+        result.surveyResult &&
+        Array.isArray(result.surveyResult) &&
+        result.surveyResult.length > 0
+      ) {
+        // Get only the LATEST submission for this employee
+        const latestSubmission =
+          result.surveyResult[result.surveyResult.length - 1];
+        console.log(
+          "🔍 Latest submission for employee",
+          result.employeeID,
+          ":",
+          latestSubmission
+        );
 
-                    console.log(
-                      `🔍 Salary: Question: "${question}", Answer: "${answer}", Section: "${section.section}"`
+        if (
+          latestSubmission.dataResult &&
+          Array.isArray(latestSubmission.dataResult)
+        ) {
+          console.log(
+            "🔍 DataResult sections:",
+            latestSubmission.dataResult.map((s) => s.section)
+          );
+
+          latestSubmission.dataResult.forEach((section) => {
+            console.log("🔍 Processing section:", section.section);
+            console.log("🔍 Section questions:", section.question);
+            console.log("🔍 Section answers:", section.answer);
+
+            if (section.question && section.answer) {
+              section.question.forEach((question, index) => {
+                console.log("🔍 Question", index, ":", question);
+                console.log("🔍 Answer", index, ":", section.answer[index]);
+
+                // Match salary question - be more flexible
+                if (
+                  question &&
+                  (question.toLowerCase().includes("salary") ||
+                    question.toLowerCase().includes("compensation") ||
+                    question.toLowerCase().includes("pay") ||
+                    question.toLowerCase().includes("wage"))
+                ) {
+                  const answer = section.answer[index];
+
+                  // Map numeric answer to text if needed
+                  const optionMapping = {
+                    "0": "Very Bad",
+                    "1": "Bad",
+                    "2": "Average",
+                    "3": "Good",
+                    "4": "Very Good",
+                  };
+
+                  if (optionMapping[answer as keyof typeof optionMapping]) {
+                    responses.push(
+                      optionMapping[answer as keyof typeof optionMapping]
                     );
+                    console.log(
+                      `✅ Salary: Mapped "${answer}" to "${
+                        optionMapping[answer as keyof typeof optionMapping]
+                      }"`
+                    );
+                  } else if (answer) {
+                    responses.push(answer);
+                    console.log(`✅ Salary: Using direct answer "${answer}"`);
                   }
-                });
-              }
-            });
-          }
-        });
+
+                  console.log(
+                    `✅ Salary: Found response "${answer}" for employee ${result.employeeID}`
+                  );
+                }
+              });
+            }
+          });
+        }
       }
     });
 
@@ -123,9 +185,24 @@ export const useDynamicChartData = () => {
       return { category: option, count, percentage };
     });
 
-    console.log("🔍 Salary Chart Data:", data);
-    console.log("🔍 Salary Responses:", responses);
-    console.log("🔍 Salary Question Found:", salaryQuestion);
+    console.log("📊 Salary Chart Data:", data);
+    console.log("📊 Total Salary Responses:", responses.length);
+    console.log("📊 Salary Responses:", responses);
+    console.log("📊 Salary Question Found:", salaryQuestion);
+
+    // Debug: Show how many unique employees responded
+    const uniqueEmployees = new Set();
+    surveyResults.forEach((result) => {
+      if (
+        result.surveyResult &&
+        Array.isArray(result.surveyResult) &&
+        result.surveyResult.length > 0
+      ) {
+        uniqueEmployees.add(result.employeeID);
+      }
+    });
+    console.log("📊 Unique employees with survey data:", uniqueEmployees.size);
+
     return data;
   };
 
@@ -139,49 +216,64 @@ export const useDynamicChartData = () => {
     const surveyResults = getAllSurveyResults.data.data;
     const responses: string[] = [];
 
-    // Extract environment responses from survey results
+    // Extract environment responses from survey results - ONLY 1 response per employee
     surveyResults.forEach((result) => {
-      if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        // Process each survey submission
-        result.surveyResult.forEach((submission) => {
-          if (submission.dataResult && Array.isArray(submission.dataResult)) {
-            submission.dataResult.forEach((section) => {
-              if (section.question && section.answer) {
-                section.question.forEach((question, index) => {
-                  // Match by question text or section title
-                  if (
-                    question &&
-                    (question.includes(environmentQuestion.question) ||
-                      question.toLowerCase().includes("physical") ||
-                      question.toLowerCase().includes("environment") ||
-                      section.section?.toLowerCase().includes("physical") ||
-                      section.section?.toLowerCase().includes("environment"))
-                  ) {
-                    // Map the answer to the correct option text
-                    const answer = section.answer[index];
-                    const optionMapping = {
-                      "0": "Very Bad",
-                      "1": "Bad",
-                      "2": "Average",
-                      "3": "Good",
-                      "4": "Very Good",
-                    };
+      if (
+        result.surveyResult &&
+        Array.isArray(result.surveyResult) &&
+        result.surveyResult.length > 0
+      ) {
+        // Get only the LATEST submission for this employee
+        const latestSubmission =
+          result.surveyResult[result.surveyResult.length - 1];
 
-                    // If answer is a number (0-4), map it to text
-                    if (optionMapping[answer as keyof typeof optionMapping]) {
-                      responses.push(
-                        optionMapping[answer as keyof typeof optionMapping]
-                      );
-                    } else {
-                      // If answer is already text, use it directly
-                      responses.push(answer);
-                    }
+        if (
+          latestSubmission.dataResult &&
+          Array.isArray(latestSubmission.dataResult)
+        ) {
+          latestSubmission.dataResult.forEach((section) => {
+            // Only process job_satisfaction section for physical environment
+            if (
+              section.section === "job_satisfaction" &&
+              section.question &&
+              section.answer
+            ) {
+              section.question.forEach((question, index) => {
+                // Match physical work environment question specifically
+                if (
+                  question &&
+                  (question
+                    .toLowerCase()
+                    .includes("physical work environment") ||
+                    question.toLowerCase().includes("physical environment"))
+                ) {
+                  const answer = section.answer[index];
+
+                  // Map numeric answer to text if needed
+                  const optionMapping = {
+                    "0": "Very Bad",
+                    "1": "Bad",
+                    "2": "Average",
+                    "3": "Good",
+                    "4": "Very Good",
+                  };
+
+                  if (optionMapping[answer as keyof typeof optionMapping]) {
+                    responses.push(
+                      optionMapping[answer as keyof typeof optionMapping]
+                    );
+                  } else if (answer) {
+                    responses.push(answer);
                   }
-                });
-              }
-            });
-          }
-        });
+
+                  console.log(
+                    `✅ Physical Environment: Found response "${answer}" for employee ${result.employeeID}`
+                  );
+                }
+              });
+            }
+          });
+        }
       }
     });
 
@@ -195,6 +287,23 @@ export const useDynamicChartData = () => {
       return { category: option, count, percentage };
     });
 
+    console.log("📊 Physical Environment Chart Data:", data);
+    console.log("📊 Total Environment Responses:", responses.length);
+    console.log("📊 Environment Responses:", responses);
+
+    // Debug: Show how many unique employees responded
+    const uniqueEmployees = new Set();
+    surveyResults.forEach((result) => {
+      if (
+        result.surveyResult &&
+        Array.isArray(result.surveyResult) &&
+        result.surveyResult.length > 0
+      ) {
+        uniqueEmployees.add(result.employeeID);
+      }
+    });
+    console.log("📊 Unique employees with survey data:", uniqueEmployees.size);
+
     return data;
   };
 
@@ -206,29 +315,64 @@ export const useDynamicChartData = () => {
     const surveyResults = getAllSurveyResults.data.data;
     const responses: string[] = [];
 
-    // Extract appreciation responses from survey results
+    // Extract appreciation responses from survey results - ONLY 1 response per employee
     surveyResults.forEach((result) => {
-      if (result.surveyResult && Array.isArray(result.surveyResult)) {
-        // Process each survey submission
-        result.surveyResult.forEach((submission) => {
-          if (submission.dataResult && Array.isArray(submission.dataResult)) {
-            submission.dataResult.forEach((section) => {
-              if (section.question && section.answer) {
-                section.question.forEach((question, index) => {
-                  // Match by question text or section title
-                  if (
-                    question &&
-                    (question.includes(appreciationQuestion.question) ||
-                      question.toLowerCase().includes("appreciated") ||
-                      section.section?.toLowerCase().includes("appreciated"))
-                  ) {
-                    responses.push(section.answer[index]);
+      if (
+        result.surveyResult &&
+        Array.isArray(result.surveyResult) &&
+        result.surveyResult.length > 0
+      ) {
+        // Get only the LATEST submission for this employee
+        const latestSubmission =
+          result.surveyResult[result.surveyResult.length - 1];
+
+        if (
+          latestSubmission.dataResult &&
+          Array.isArray(latestSubmission.dataResult)
+        ) {
+          latestSubmission.dataResult.forEach((section) => {
+            // Only process growth section for appreciation
+            if (
+              section.section === "growth" &&
+              section.question &&
+              section.answer
+            ) {
+              section.question.forEach((question, index) => {
+                // Match appreciation question specifically: "Do you feel appreciated at work?"
+                if (
+                  question &&
+                  (question
+                    .toLowerCase()
+                    .includes("do you feel appreciated at work") ||
+                    question
+                      .toLowerCase()
+                      .includes("feel appreciated at work") ||
+                    question.toLowerCase().includes("appreciated at work"))
+                ) {
+                  const answer = section.answer[index];
+
+                  // Map numeric answer to text if needed
+                  const optionMapping = {
+                    "0": "Yes",
+                    "1": "No",
+                  };
+
+                  if (optionMapping[answer as keyof typeof optionMapping]) {
+                    responses.push(
+                      optionMapping[answer as keyof typeof optionMapping]
+                    );
+                  } else if (answer) {
+                    responses.push(answer);
                   }
-                });
-              }
-            });
-          }
-        });
+
+                  console.log(
+                    `✅ Appreciation: Found response "${answer}" for employee ${result.employeeID}`
+                  );
+                }
+              });
+            }
+          });
+        }
       }
     });
 
@@ -241,6 +385,23 @@ export const useDynamicChartData = () => {
         responses.length > 0 ? Math.round((count / responses.length) * 100) : 0;
       return { category: option, count, percentage };
     });
+
+    console.log("📊 Appreciation Chart Data:", data);
+    console.log("📊 Total Appreciation Responses:", responses.length);
+    console.log("📊 Appreciation Responses:", responses);
+
+    // Debug: Show how many unique employees responded
+    const uniqueEmployees = new Set();
+    surveyResults.forEach((result) => {
+      if (
+        result.surveyResult &&
+        Array.isArray(result.surveyResult) &&
+        result.surveyResult.length > 0
+      ) {
+        uniqueEmployees.add(result.employeeID);
+      }
+    });
+    console.log("📊 Unique employees with survey data:", uniqueEmployees.size);
 
     return data;
   };

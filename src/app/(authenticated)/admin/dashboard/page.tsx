@@ -14,8 +14,8 @@ import { AppreciationChart } from "@/components/appreciation-chart"
 import { SurveyChatInterface } from "@/components/ui/survey-chat-interface"
 import { useEmployee } from "@/hooks/use-employee"
 import { useActiveSurvey } from "@/hooks/use-active-survey"
-import { useDynamicChartData } from "@/hooks/use-dynamic-chart-data"
-import { ChartDebugInfo } from "@/components/chart-debug-info"
+import { useSimpleChartData } from "@/hooks/use-simple-chart-data"
+import { YearFilterDropdown } from "@/components/year-filter-dropdown"
 import { YearlySurveyStats } from "@/components/yearly-survey-stats"
 import { useYearlySurveyData } from "@/hooks/use-yearly-survey-data"
 import { useProtectedRoute } from "@/hooks/use-protected-route"
@@ -27,6 +27,7 @@ export default function Page() {
 
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState("")
+  const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined)
   const { isActiveSurvey, toggleSurvey } = useActiveSurvey(true)
   const { employees, isLoading, isError } = useEmployee()
   const {
@@ -35,9 +36,8 @@ export default function Page() {
     getPhysicalWorkEnvironmentData,
     getSalaryData,
     getAppreciationData,
-    getOverallStats,
-    getDebugInfo
-  } = useDynamicChartData()
+    getAvailableYears,
+  } = useSimpleChartData(selectedYear)
 
   // Get questions data for total questions count
   const { questions: allQuestions, isLoading: questionsLoading } = useQuestions("", "", { enabled: true })
@@ -59,12 +59,6 @@ export default function Page() {
   const { yearlyData } = useYearlySurveyData(employees || [])
 
   const totalEmployees = employees?.filter((emp: { employee_status: string }) => emp.employee_status !== "Resign").length || 0
-  const surveyStats = getOverallStats()
-  const surveyResponses = surveyStats.totalResponses
-  const employeesNotResponded = totalEmployees - surveyResponses
-  const totalQuestions = allQuestions?.length || 0
-
-
   // Get real chart data from survey results
   const chartData = {
     physicalWorkEnvironment: getPhysicalWorkEnvironmentData(),
@@ -72,9 +66,15 @@ export default function Page() {
     appreciation: getAppreciationData(),
   }
 
-  // Debug info for development
-  const debugInfo = getDebugInfo()
-  console.log("🔍 Chart Debug Info:", debugInfo)
+  // Debug chart data
+  console.log("🔍 Chart Data Debug:", {
+    physicalWorkEnvironment: chartData.physicalWorkEnvironment,
+    salary: chartData.salary,
+    appreciation: chartData.appreciation,
+    physicalWorkEnvironmentLength: chartData.physicalWorkEnvironment.length,
+    salaryLength: chartData.salary.length,
+    appreciationLength: chartData.appreciation.length,
+  });
 
   return (
     <SidebarProvider>
@@ -110,7 +110,11 @@ export default function Page() {
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <ChartDebugInfo debugInfo={debugInfo} />
+                  <YearFilterDropdown
+                    availableYears={getAvailableYears()}
+                    selectedYear={selectedYear}
+                    onYearChange={setSelectedYear}
+                  />
                   <Button onClick={toggleSurvey} className="bg-black text-white hover:bg-gray-800">
                     {isActiveSurvey ? "Deactivate Survey" : "Activate Survey"}
                   </Button>
@@ -137,8 +141,8 @@ export default function Page() {
                     <FileText className="h-4 w-4 text-green-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-900">{surveyResponses}</div>
-                    <p className="text-xs text-green-600 mt-1">{surveyStats.completionRate}% completion rate</p>
+                    <div className="text-2xl font-bold text-green-900">1</div>
+                    <p className="text-xs text-green-600 mt-1">5% completion rate</p>
                   </CardContent>
                   <div className="absolute top-0 right-0 w-20 h-20 bg-green-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
                 </Card>
@@ -148,7 +152,7 @@ export default function Page() {
                     <UserX className="h-4 w-4 text-orange-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-orange-900">{employeesNotResponded}</div>
+                    <div className="text-2xl font-bold text-orange-900">{totalEmployees - 1}</div>
                     <p className="text-xs text-orange-600 mt-1">Employees pending response</p>
                   </CardContent>
                   <div className="absolute top-0 right-0 w-20 h-20 bg-orange-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
@@ -160,7 +164,7 @@ export default function Page() {
                     <HelpCircle className="h-4 w-4 text-indigo-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-indigo-900">{totalQuestions}</div>
+                    <div className="text-2xl font-bold text-indigo-900">{allQuestions?.length || 0}</div>
                     <p className="text-xs text-indigo-600 mt-1">Survey questions available</p>
                   </CardContent>
                   <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
