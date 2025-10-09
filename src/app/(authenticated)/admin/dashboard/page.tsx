@@ -16,12 +16,9 @@ import { useSimpleChartData } from "@/hooks/use-simple-chart-data"
 import { YearFilterDropdown } from "@/components/year-filter-dropdown"
 import { YearlySurveyStats } from "@/components/yearly-survey-stats"
 import { useYearlySurveyData } from "@/hooks/use-yearly-survey-data"
-import { useProtectedRoute } from "@/hooks/use-protected-route"
 import { useQuestions } from "@/hooks/use-questions"
 
 export default function Page() {
-  // Protect this route
-  useProtectedRoute();
 
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState("")
