@@ -18,7 +18,7 @@ export function PhysicalWorkEnvironmentChart({ data }: PhysicalWorkEnvironmentCh
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-base sm:text-lg font-semibold">Physical Work Environment</CardTitle>
+        <CardTitle className="tracking-tight text-lg font-semibold">Physical Work Environment</CardTitle>
         <p className="text-xs sm:text-sm text-gray-600">Employee satisfaction with workplace conditions</p>
       </CardHeader>
       <CardContent>
@@ -41,7 +41,7 @@ export function PhysicalWorkEnvironmentChart({ data }: PhysicalWorkEnvironmentCh
                 formatter={(value) => [value, "Responses"]}
                 labelFormatter={(label) => `Category: ${label}`}
               />
-              <Bar dataKey="count" fill="#000000" radius={[4, 4, 0, 0]} maxBarSize={60} />
+              <Bar dataKey="count" fill="#F97316" radius={[4, 4, 0, 0]} maxBarSize={60} />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

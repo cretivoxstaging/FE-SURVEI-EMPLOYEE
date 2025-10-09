@@ -14,8 +14,7 @@ import {
   X,
   BarChart3,
   Users,
-  FileText,
-  Settings
+  FileText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -23,7 +22,6 @@ const navigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: BarChart3 },
   { name: "Employees", href: "/admin/employee", icon: Users },
   { name: "Survey Configuration", href: "/admin/survey/configuration", icon: FileText },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
 ]
 
 export function HeaderNavigation() {

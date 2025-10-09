@@ -23,8 +23,8 @@ interface LabelProps {
   percentage: number
 }
 
-// Yellow color scheme for salary chart: Very Bad to Very Good
-const COLORS = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e"]
+// Color scheme for salary chart: Very Bad to Very Good
+const COLORS = ["#EC4899", "#3B82F6", "#F97316", "#22C55E", "#A855F7"]
 
 export function SalarySatisfactionChart({ data }: SalarySatisfactionChartProps) {
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: LabelProps) => {

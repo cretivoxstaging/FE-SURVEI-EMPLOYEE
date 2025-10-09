@@ -500,19 +500,16 @@ export default function EmployeePage() {
 
         {/* Employee Table */}
         <div className="bg-white">
-          <div className="p-4 border-b">
-            <h3 className="font-semibold">All Employees</h3>
-          </div>
           <Table>
-            <TableHeader className="bg-gray-200">
-              <TableRow>
-                <TableHead>No</TableHead>
-                <TableHead>Employee Name</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Branch</TableHead>
-                <TableHead>Status Survey</TableHead>
-                <TableHead>Action</TableHead>
+            <TableHeader className="bg-gray-900 hover:bg-gray-900">
+              <TableRow className="text-white">
+                <TableHead className="text-white">No</TableHead>
+                <TableHead className="text-white">Employee Name</TableHead>
+                <TableHead className="text-white">Position</TableHead>
+                <TableHead className="text-white">Department</TableHead>
+                <TableHead className="text-white">Branch</TableHead>
+                <TableHead className="text-white">Status Survey</TableHead>
+                <TableHead className="text-white">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -86,7 +86,7 @@ export default function Page() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Survey Satisfaction</h1>
-                <p className="text-sm text-gray-600 mt-1">Employee Survey Analytics & Insights</p>
+                <p className="text-lg font-medium text-gray-600 mt-1">Employee Survey Analytics & Insights</p>
                 {/* Show loading/error status in header instead of blocking content */}
                 {(isLoading || surveyLoading || questionsLoading) && (
                   <p className="text-xs text-blue-600 mt-1">🔄 Loading data...</p>
@@ -109,7 +109,7 @@ export default function Page() {
 
             {/* Metrics Grid - Modern Layout */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-              <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <Card className="relative overflow-hidden bg-white border-2 border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-blue-700">Total Employees</CardTitle>
                   <Users className="h-4 w-4 text-blue-600" />
@@ -121,7 +121,7 @@ export default function Page() {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-blue-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
               </Card>
 
-              <Card className="relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+              <Card className="relative overflow-hidden bg-white border-2 border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-green-700">Survey Responses</CardTitle>
                   <FileText className="h-4 w-4 text-green-600" />
@@ -133,7 +133,7 @@ export default function Page() {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-green-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
               </Card>
 
-              <Card className="relative overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+              <Card className="relative overflow-hidden bg-white border-2 border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-orange-700">Not Responded</CardTitle>
                   <UserX className="h-4 w-4 text-orange-600" />
@@ -145,7 +145,7 @@ export default function Page() {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-orange-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
               </Card>
 
-              <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
+              <Card className="relative overflow-hidden bg-white border-2 border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-indigo-700">Total Questions</CardTitle>
                   <HelpCircle className="h-4 w-4 text-indigo-600" />
@@ -157,7 +157,7 @@ export default function Page() {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
               </Card>
 
-              <Card className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+              <Card className="relative overflow-hidden bg-white border-2 border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-purple-700">Survey Status</CardTitle>
                   <div className="w-2 h-2 rounded-full bg-current"></div>
