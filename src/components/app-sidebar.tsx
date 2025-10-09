@@ -24,7 +24,6 @@ import {
   DialogFooter,
   DialogTrigger
 } from "@/components/ui/dialog"
-import { useAuth } from "@/hooks/use-auth"
 import Image from "next/image"
 
 const menuData = {
@@ -40,13 +39,6 @@ const menuData = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const [isLogoutOpen, setIsLogoutOpen] = React.useState(false)
-  const { logout } = useAuth()
-
-  const handleLogout = () => {
-    logout()
-    setIsLogoutOpen(false)
-    window.location.href = "/auth/login"
-  }
 
   return (
     <Sidebar {...props}>
@@ -133,7 +125,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </div>
                   <DialogFooter className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setIsLogoutOpen(false)}>Cancel</Button>
-                    <Button variant="destructive" onClick={handleLogout}>Logout</Button>
+                    {/* <Button variant="destructive" onClick={handleLogout}>Logout</Button> */}
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
