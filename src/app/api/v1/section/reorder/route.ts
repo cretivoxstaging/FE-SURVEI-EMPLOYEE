@@ -5,7 +5,6 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { sections } = body;
 
-    console.log("🔄 Reorder API called with sections:", sections);
 
     // For now, just return success
     // In a real implementation, you would update the database with the new order

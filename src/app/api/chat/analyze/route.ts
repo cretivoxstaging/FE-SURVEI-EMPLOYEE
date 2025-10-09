@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
 
     for (const modelName of modelsToTry) {
       try {
-        console.log(`Trying model: ${modelName}`);
         model = genAI.getGenerativeModel({
           model: modelName,
           generationConfig: {
@@ -66,10 +65,8 @@ export async function POST(req: NextRequest) {
         });
 
         result = await model.generateContent(context);
-        console.log(`Successfully used model: ${modelName}`);
         break; // Success, exit the loop
       } catch (modelError: any) {
-        console.log(`Model ${modelName} failed:`, modelError.message);
         lastError = modelError;
         continue; // Try next model
       }

@@ -92,25 +92,21 @@ export default function ValidationDemoPage() {
   })
 
   const handleEmployeeSubmit = async (data: any) => {
-    console.log("Employee data:", data)
     alert("Employee form submitted successfully!")
     employeeReset()
   }
 
   const handleQuestionSubmit = async (data: any) => {
-    console.log("Question data:", data)
     alert("Question form submitted successfully!")
     questionReset()
   }
 
   const handleSectionSubmit = async (data: any) => {
-    console.log("Section data:", data)
     alert("Section form submitted successfully!")
     sectionReset()
   }
 
   const handleLoginSubmit = async (data: any) => {
-    console.log("Login data:", data)
     alert("Login form submitted successfully!")
     loginReset()
   }

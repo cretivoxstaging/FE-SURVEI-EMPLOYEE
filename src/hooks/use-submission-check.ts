@@ -42,24 +42,6 @@ export const useSubmissionCheck = (
       String(employee.employeeID) === String(employeeId)
   );
 
-  console.log("🔍 Submission Check Debug:", {
-    employeeId,
-    currentYear,
-    employeeFound: !!employeeData,
-    employeeData: employeeData
-      ? {
-          id: employeeData.id,
-          employeeID: employeeData.employeeID,
-          name: employeeData.name,
-          surveyResultCount: employeeData.surveyResult?.length || 0,
-          surveyResults: employeeData.surveyResult?.map((result: any) => ({
-            date: result.date,
-            hasDataResult: !!result.dataResult,
-            hasConclutionResult: !!result.conclutionResult,
-          })),
-        }
-      : null,
-  });
 
   if (
     !employeeData ||
@@ -91,11 +73,6 @@ export const useSubmissionCheck = (
     }
   );
 
-  console.log("🔍 Current Year Submission Check:", {
-    currentYear,
-    currentYearSubmission,
-    found: !!currentYearSubmission,
-  });
 
   if (currentYearSubmission) {
     return {

@@ -19,7 +19,6 @@ export const useSection = () => {
             orderMap.find((item: any) => item.id === b.id)?.order ?? 999;
           return orderA - orderB;
         });
-        console.log("📊 Sections sorted by saved order:", orderedSections);
         return orderedSections;
       }
     } catch (error) {
@@ -39,9 +38,7 @@ export const useSection = () => {
   } = useQuery({
     queryKey: ["sections"],
     queryFn: async () => {
-      console.log("🔍 useSection: Starting API call to /api/v1/section");
       const response = await apiClient.get("/api/v1/section");
-      console.log("🔍 useSection: API response received:", response);
 
       // Handle different response formats from external API
       let sectionsData = [];
@@ -55,10 +52,6 @@ export const useSection = () => {
         sectionsData = response.data;
       } else {
         console.warn("⚠️ Unexpected API response format:", response.data);
-        console.log(
-          "📊 Raw API response:",
-          JSON.stringify(response.data, null, 2)
-        );
 
         // Don't use fallback data - throw error to see what's happening
         throw new Error(
@@ -66,7 +59,6 @@ export const useSection = () => {
         );
       }
 
-      console.log("📊 Fetched sections:", sectionsData);
       return sectionsData;
     },
   });
@@ -75,26 +67,15 @@ export const useSection = () => {
   const sections = sortSectionsByOrder(rawSections);
 
   // Debug logging for hook state
-  console.log("🔍 useSection Hook State:", {
-    sections,
-    isLoading,
-    isError,
-    error,
-    hasData: !!sections,
-    dataLength: sections?.length,
-  });
 
   // POST Section
   const addSection = useMutation({
     mutationFn: async (title: string) => {
-      console.log("🚀 Adding section with title:", title);
 
       const response = await apiClient.post("/api/v1/section", { title });
-      console.log("✅ Section added successfully:", response.data);
       return response.data;
     },
     onSuccess: () => {
-      console.log("🔄 Invalidating sections query");
       queryClient.invalidateQueries({ queryKey: ["sections"] });
     },
     onError: (error) => {
@@ -105,14 +86,11 @@ export const useSection = () => {
   // PUT Section
   const updateSection = useMutation({
     mutationFn: async ({ id, title }: { id: string; title: string }) => {
-      console.log("🔄 Updating section with ID:", id, "and title:", title);
 
       const response = await apiClient.put(`/api/v1/section/${id}`, { title });
-      console.log("✅ Section updated successfully:", response.data);
       return response.data;
     },
     onSuccess: () => {
-      console.log("🔄 Invalidating sections query after update");
       queryClient.invalidateQueries({ queryKey: ["sections"] });
     },
     onError: (error) => {
@@ -123,16 +101,11 @@ export const useSection = () => {
   // DELETE Section
   const deleteSection = useMutation({
     mutationFn: async (id: string) => {
-      console.log("🗑️ Deleting section with ID:", id);
 
       const response = await apiClient.delete(`/api/v1/section/${id}`);
-      console.log("✅ Section deleted successfully:", response.data);
       return response.data;
     },
     onSuccess: () => {
-      console.log(
-        "🔄 Invalidating sections and questions queries after delete"
-      );
       queryClient.invalidateQueries({ queryKey: ["sections"] });
       // Also invalidate questions to refresh UI
       queryClient.invalidateQueries({ queryKey: ["questions"] });
@@ -145,7 +118,6 @@ export const useSection = () => {
   // REORDER Sections (Local only - no API call)
   const reorderSections = useMutation({
     mutationFn: async (newOrder: any[]) => {
-      console.log("🔄 Reordering sections locally:", newOrder);
 
       // Save order to localStorage
       const sectionOrder = newOrder.map((section, index) => ({
@@ -157,11 +129,9 @@ export const useSection = () => {
       // Update the local cache with the new order
       queryClient.setQueryData(["sections"], newOrder);
 
-      console.log("✅ Sections reordered successfully (local only)");
       return { success: true, sections: newOrder };
     },
     onSuccess: () => {
-      console.log("🔄 Local reorder completed successfully");
     },
     onError: (error) => {
       console.error("❌ Local reorder failed:", error);

@@ -66,7 +66,6 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
 
     // If we don't have processed questions, try raw API data
     if (map.size === 0 && rawQuestionsData) {
-      console.log("🔍 Using raw questions data as fallback")
       const rawQuestions = rawQuestionsData?.data || rawQuestionsData || []
       rawQuestions.forEach((q: ApiQuestion) => {
         const stringId = String(q.id)
@@ -93,20 +92,6 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
       })
     }
 
-    console.log("🔍 Question Map created:", {
-      totalQuestions: allQuestions?.length || 0,
-      rawQuestionsAvailable: !!rawQuestionsData,
-      mapSize: map.size,
-      sampleKeys: Array.from(map.keys()).slice(0, 10),
-      sampleQuestions: Array.from(map.values())
-        .slice(0, 3)
-        .map((q) => ({
-          id: q.id,
-          idType: typeof q.id,
-          text: q.text?.substring(0, 50) + "...",
-          type: q.type,
-        })),
-    })
     return map
   }, [allQuestions, rawQuestionsData])
 
@@ -116,11 +101,6 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
       map.set(String(s.id), s)
       map.set(s.id, s)
     })
-    console.log("🔍 Section Map created:", {
-      totalSections: sections?.length || 0,
-      mapSize: map.size,
-      sampleKeys: Array.from(map.keys()).slice(0, 5),
-    })
     return map
   }, [sections])
 
@@ -128,14 +108,6 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
   const enhancedSurveyResults = useMemo(() => {
     if (!surveyData?.surveyResult) return []
 
-    console.log("🔍 Processing survey results:", {
-      surveyData: surveyData,
-      surveyResultType: typeof surveyData.surveyResult,
-      isArray: Array.isArray(surveyData.surveyResult),
-      totalSections: Array.isArray(surveyData.surveyResult) ? surveyData.surveyResult.length : 0,
-      questionMapSize: questionMap.size,
-      sectionMapSize: sectionMap.size,
-    })
 
     // Handle new data format - surveyResult is an array of submissions
     let surveyResults: SurveyResult[] = []
@@ -145,12 +117,10 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
       const latestSubmission = surveyData.surveyResult[surveyData.surveyResult.length - 1]
       if (latestSubmission?.dataResult && Array.isArray(latestSubmission.dataResult)) {
         surveyResults = latestSubmission.dataResult
-        console.log("🔍 Using latest submission data:", latestSubmission.date)
       }
     }
 
     if (!Array.isArray(surveyResults) || surveyResults.length === 0) {
-      console.log("❌ No valid survey results found:", surveyResults)
       return []
     }
 
@@ -158,13 +128,6 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
       const sectionId = sectionResult.section
       const section = sectionMap.get(sectionId)
 
-      console.log(`🔍 Processing section ${sectionIndex}:`, {
-        sectionId,
-        sectionTitle: section?.title,
-        questionIds: sectionResult.question,
-        answers: sectionResult.answer,
-        sectionResult: sectionResult,
-      })
 
       // Ensure question and answer arrays exist and have the same length
       const questions = Array.isArray(sectionResult.question) ? sectionResult.question : []
@@ -212,15 +175,6 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
 
         const answer = answers[index] || "No answer provided"
 
-        console.log(`🔍 Processing question ${index}:`, {
-          questionId,
-          questionIdType: typeof questionId,
-          questionFound: !!question,
-          questionText: question?.text,
-          questionIdFromFound: question?.id,
-          answer: answer,
-          availableKeys: Array.from(questionMap.keys()).slice(0, 5),
-        })
 
         return {
           id: questionId,
@@ -242,12 +196,6 @@ export function SurveyResultsDialog({ surveyId, employeeId, employeeName, childr
   }, [surveyData, questionMap, sectionMap, allQuestions, rawQuestionsData])
 
   // Debug logging
-  console.log("🔍 SurveyResultsDialog - Survey ID:", surveyId)
-  console.log("🔍 SurveyResultsDialog - Employee ID:", employeeId)
-  console.log("🔍 SurveyResultsDialog - Survey Data:", surveyData)
-  console.log("🔍 SurveyResultsDialog - Enhanced Results:", enhancedSurveyResults)
-  console.log("🔍 SurveyResultsDialog - Loading:", isLoading)
-  console.log("🔍 SurveyResultsDialog - Error:", error)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

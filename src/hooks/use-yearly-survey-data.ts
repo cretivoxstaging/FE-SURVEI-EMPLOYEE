@@ -124,7 +124,6 @@ export function useYearlySurveyData(employees: Employee[]) {
       })
       .sort((a, b) => b.year.localeCompare(a.year)); // Sort by year descending
 
-    console.log("📊 Yearly Survey Data Processed:", result);
     return result;
   }, [surveyResults, employees]);
 
