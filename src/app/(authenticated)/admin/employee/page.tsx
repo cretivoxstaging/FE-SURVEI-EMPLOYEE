@@ -4,10 +4,8 @@ import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AppSidebar } from "@/components/app-sidebar"
+import { HeaderNavigation } from "@/components/header-navigation"
 import { Search, Calendar, X, Download } from "lucide-react"
 import { useEmployee } from "@/hooks/use-employee"
 import { useSurveyResults } from "@/hooks/use-survey-results"
@@ -377,7 +375,6 @@ export default function EmployeePage() {
     }
   }, [employees, getAllSurveyResults.data, getAllSurveyResults.isError])
 
-
   // Filter employees by search term and year
   const filteredEmployees = employeesWithSurvey.filter((employee) => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -419,170 +416,161 @@ export default function EmployeePage() {
   })
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex-1" />
-        </header>
+    <div className="min-h-screen bg-gray-50">
+      <HeaderNavigation />
 
-        <div className="flex flex-1 flex-col gap-6 p-6">
-          {/* Page Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Employee</h1>
-              <p className="text-gray-600">Easily track and manage all employee data.</p>
-              {selectedYear && selectedYear !== "all" && (
-                <p className="text-sm text-blue-600 mt-1">
-                  📅 Filtered by survey year: <strong>{selectedYear}</strong>
-                  ({filteredEmployees.filter(emp => emp.hasSurvey).length} employees with surveys in {selectedYear})
-                </p>
-              )}
-              {getAllSurveyResults.isError && (
-                <p className="text-sm text-orange-600 mt-1">
-                  ⚠️ Survey data unavailable - showing employees without survey status
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={exportToExcel}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={filteredEmployees.filter(emp => emp.hasSurvey).length === 0}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export to Excel
-              </Button>
-            </div>
+      <div className="flex flex-1 flex-col gap-6 p-6">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Employee</h1>
+            <p className="text-gray-600">Easily track and manage all employee data.</p>
+            {selectedYear && selectedYear !== "all" && (
+              <p className="text-sm text-blue-600 mt-1">
+                📅 Filtered by survey year: <strong>{selectedYear}</strong>
+                ({filteredEmployees.filter(emp => emp.hasSurvey).length} employees with surveys in {selectedYear})
+              </p>
+            )}
+            {getAllSurveyResults.isError && (
+              <p className="text-sm text-orange-600 mt-1">
+                ⚠️ Survey data unavailable - showing employees without survey status
+              </p>
+            )}
           </div>
-
-          {/* Search & Filter */}
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search Employee Name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-gray-600" />
-                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                  Filter by Year:
-                </label>
-              </div>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[180px] bg-white border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  {availableYears.map((year) => (
-                    <SelectItem key={year} value={year}>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3 h-3" />
-                        <span>{year}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedYear && selectedYear !== "all" && (
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedYear("all")}
-                  className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors"
-                  size="sm"
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  Clear
-                </Button>
-              )}
-            </div>
-          </div>
-
-
-          {/* Employee Table */}
-          <div className="bg-white">
-            <div className="p-4 border-b">
-              <h3 className="font-semibold">All Employees</h3>
-            </div>
-            <Table>
-              <TableHeader className="bg-gray-200">
-                <TableRow>
-                  <TableHead>No</TableHead>
-                  <TableHead>Employee Name</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Status Survey</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center">
-                      Loading employees...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredEmployees.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center">
-                      No employees found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredEmployees.map((employee, index) => (
-                    <TableRow key={employee.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>{employee.name}</TableCell>
-                      <TableCell>{employee.job_position}</TableCell>
-                      <TableCell>{employee.department}</TableCell>
-                      <TableCell>{employee.branch}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            employee.hasSurvey
-                              ? "bg-black text-white"
-                              : "bg-gray-200 text-gray-700"
-                          }
-                        >
-                          {employee.hasSurvey ? "Submitted" : "Pending"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {employee.hasSurvey ? (
-                          <SurveyResultsDialog
-                            surveyId={employee.surveyResult?.id}
-                            employeeId={employee.id}
-                            employeeName={employee.name}
-                          >
-                            <Badge
-                              className="bg-black text-white hover:bg-gray-800"
-                            >
-                              View Survey
-                            </Badge>
-                          </SurveyResultsDialog>
-                        ) : (
-                          <Badge className="bg-gray-200 text-gray-700">No Survey</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={exportToExcel}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={filteredEmployees.filter(emp => emp.hasSurvey).length === 0}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export to Excel
+            </Button>
           </div>
         </div>
 
-      </SidebarInset>
-    </SidebarProvider>
+        {/* Search & Filter */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search Employee Name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-600" />
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Filter by Year:
+              </label>
+            </div>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[180px] bg-white border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Years</SelectItem>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={year}>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3 h-3" />
+                      <span>{year}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedYear && selectedYear !== "all" && (
+              <Button
+                variant="outline"
+                onClick={() => setSelectedYear("all")}
+                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors"
+                size="sm"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+
+
+        {/* Employee Table */}
+        <div className="bg-white">
+          <div className="p-4 border-b">
+            <h3 className="font-semibold">All Employees</h3>
+          </div>
+          <Table>
+            <TableHeader className="bg-gray-200">
+              <TableRow>
+                <TableHead>No</TableHead>
+                <TableHead>Employee Name</TableHead>
+                <TableHead>Position</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Branch</TableHead>
+                <TableHead>Status Survey</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    Loading employees...
+                  </TableCell>
+                </TableRow>
+              ) : filteredEmployees.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    No employees found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredEmployees.map((employee, index) => (
+                  <TableRow key={employee.id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{employee.name}</TableCell>
+                    <TableCell>{employee.job_position}</TableCell>
+                    <TableCell>{employee.department}</TableCell>
+                    <TableCell>{employee.branch}</TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          employee.hasSurvey
+                            ? "bg-black text-white"
+                            : "bg-gray-200 text-gray-700"
+                        }
+                      >
+                        {employee.hasSurvey ? "Submitted" : "Pending"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {employee.hasSurvey ? (
+                        <SurveyResultsDialog
+                          surveyId={employee.surveyResult?.id}
+                          employeeId={employee.id}
+                          employeeName={employee.name}
+                        >
+                          <Badge
+                            className="bg-black text-white hover:bg-gray-800"
+                          >
+                            View Survey
+                          </Badge>
+                        </SurveyResultsDialog>
+                      ) : (
+                        <Badge className="bg-gray-200 text-gray-700">No Survey</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
   )
 }

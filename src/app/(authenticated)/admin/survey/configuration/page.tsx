@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Plus, Edit, Trash2, Hash, AlertCircle, ChevronDown, ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 import { AddSectionModal } from "@/components/add-section-modal"
@@ -17,15 +16,12 @@ import { SurveyConfigurationSkeleton } from "@/components/survey-configuration-s
 import type { ConfigQuestion, ConfigSection } from "@/types/survey"
 import { useSection } from "@/hooks/use-sections"
 import { useQuestion } from "@/hooks/use-questions"
-import { AppSidebar } from "@/components/app-sidebar"
-import { useProtectedRoute } from "@/hooks/use-protected-route"
+import { HeaderNavigation } from "@/components/header-navigation"
 
 // ======================
 // Page component
 // ======================
 export default function SurveyConfigurationPage() {
-  // Protect this route
-  useProtectedRoute()
 
   // Sections
   const { sections, addSection, updateSection, deleteSection, reorderSections, isLoading, isError, error } = useSection()
@@ -227,120 +223,113 @@ export default function SurveyConfigurationPage() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 items-center gap-2 border-b px-4">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="h-4" />
-          <h1 className="text-lg font-bold">Survey Configuration</h1>
-        </header>
+    <div className="min-h-screen bg-gray-50">
+      <HeaderNavigation />
 
-        <div className="flex flex-1 flex-col gap-6 p-6">
-          {/* Error Display */}
-          {isError && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="flex items-center gap-2 p-4">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="font-medium text-red-800">Failed to Load Sections</p>
-                  <p className="text-sm text-red-600">
-                    {error?.message || "Unknown error occurred"}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+      <div className="flex flex-1 flex-col gap-6 p-6">
+        {/* Error Display */}
+        {isError && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="flex items-center gap-2 p-4">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <div>
+                <p className="font-medium text-red-800">Failed to Load Sections</p>
+                <p className="text-sm text-red-600">
+                  {error?.message || "Unknown error occurred"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Survey Configuration</h2>
-              <p className="text-gray-600 mt-1">Create and manage survey sections and questions</p>
-            </div>
-            <div className="flex gap-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Survey Configuration</h2>
+            <p className="text-gray-600 mt-1">Create and manage survey sections and questions</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => openModal("addSection")}
+              disabled={isLoading}
+              title="Add a new section to your survey"
+            >
+              <Plus className="w-4 h-4 mr-1" /> Add Section
+            </Button>
+          </div>
+        </div>
+
+        {/* Empty State */}
+        {sections && sections.length === 0 && !isLoading && (
+          <Card className="border-dashed border-2 border-gray-300">
+            <CardContent className="p-12 text-center">
+              <Hash className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No Sections Yet</h3>
+              <p className="text-gray-500 mb-4">
+                Create your first section to start building your survey
+              </p>
               <Button
                 onClick={() => openModal("addSection")}
-                disabled={isLoading}
-                title="Add a new section to your survey"
+                title="Create your first survey section"
               >
-                <Plus className="w-4 h-4 mr-1" /> Add Section
+                <Plus className="w-4 h-4 mr-2" /> Create First Section
               </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Empty State */}
-          {sections && sections.length === 0 && !isLoading && (
-            <Card className="border-dashed border-2 border-gray-300">
-              <CardContent className="p-12 text-center">
-                <Hash className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Sections Yet</h3>
-                <p className="text-gray-500 mb-4">
-                  Create your first section to start building your survey
-                </p>
-                <Button
-                  onClick={() => openModal("addSection")}
-                  title="Create your first survey section"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Create First Section
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+        {/* Render sections using kanban board */}
+        <SurveyKanban
+          sections={sections || []}
+          onReorderSections={handleReorderSections}
+          onAddQuestionModal={openAddQuestionModal}
+          onEditSectionModal={openEditSectionModal}
+          onDeleteModal={openDeleteModal}
+          onEditQuestionModal={openEditQuestionModal}
+          expandedSections={expandedSections}
+          onToggleExpanded={toggleSectionExpanded}
+          isLoading={isLoading}
+        />
 
-          {/* Render sections using kanban board */}
-          <SurveyKanban
-            sections={sections || []}
-            onReorderSections={handleReorderSections}
-            onAddQuestionModal={openAddQuestionModal}
-            onEditSectionModal={openEditSectionModal}
-            onDeleteModal={openDeleteModal}
-            onEditQuestionModal={openEditQuestionModal}
-            expandedSections={expandedSections}
-            onToggleExpanded={toggleSectionExpanded}
-            isLoading={isLoading}
-          />
+        {/* Modals */}
+        <AddSectionModal
+          open={modals.addSection}
+          onClose={() => closeModal("addSection")}
+          onAdd={handleAddSection}
+          isLoading={addSection.isPending}
+        />
 
-          {/* Modals */}
-          <AddSectionModal
-            open={modals.addSection}
-            onClose={() => closeModal("addSection")}
-            onAdd={handleAddSection}
-            isLoading={addSection.isPending}
-          />
+        <EditSectionModal
+          open={modals.editSection}
+          onClose={() => closeModal("editSection")}
+          section={selectedSectionForEdit}
+          onEdit={handleEditSection}
+          isLoading={updateSection.isPending}
+        />
 
-          <EditSectionModal
-            open={modals.editSection}
-            onClose={() => closeModal("editSection")}
-            section={selectedSectionForEdit}
-            onEdit={handleEditSection}
-            isLoading={updateSection.isPending}
-          />
+        <AddQuestionModal
+          open={modals.addQuestion}
+          onClose={() => closeModal("addQuestion")}
+          onAdd={handleAddQuestion}
+          isLoading={addQuestion.isPending}
+        />
 
-          <AddQuestionModal
-            open={modals.addQuestion}
-            onClose={() => closeModal("addQuestion")}
-            onAdd={handleAddQuestion}
-            isLoading={addQuestion.isPending}
-          />
+        <EditQuestionModal
+          open={modals.editQuestion}
+          onClose={() => closeModal("editQuestion")}
+          question={selectedQuestion}
+          onEdit={handleEditQuestion}
+          isLoading={updateQuestion.isPending}
+        />
 
-          <EditQuestionModal
-            open={modals.editQuestion}
-            onClose={() => closeModal("editQuestion")}
-            question={selectedQuestion}
-            onEdit={handleEditQuestion}
-            isLoading={updateQuestion.isPending}
-          />
-
-          <DeleteConfirmModal
-            open={modals.deleteConfirm}
-            onClose={() => closeModal("deleteConfirm")}
-            onConfirm={handleDelete}
-            title={deleteTarget?.type === "section" ? "Delete section?" : "Delete question?"}
-            description={deleteTarget ? `This will permanently delete the ${deleteTarget.type}.` : ""}
-            isLoading={deleteTarget?.type === "section" ? deleteSection.isPending : deleteQuestion.isPending}
-          />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        <DeleteConfirmModal
+          open={modals.deleteConfirm}
+          onClose={() => closeModal("deleteConfirm")}
+          onConfirm={handleDelete}
+          title={deleteTarget?.type === "section" ? "Delete section?" : "Delete question?"}
+          description={deleteTarget ? `This will permanently delete the ${deleteTarget.type}.` : ""}
+          isLoading={deleteTarget?.type === "section" ? deleteSection.isPending : deleteQuestion.isPending}
+        />
+      </div>
+    </div>
   )
 }
