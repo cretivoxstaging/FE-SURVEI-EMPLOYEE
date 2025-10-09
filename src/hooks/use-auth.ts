@@ -31,13 +31,6 @@ export function useAuth() {
     const authEmail = "surveycbn@cbn.com";
     const authPassword = "cretivoxogscondfe";
 
-    console.log("🔍 Checking credentials:", {
-      email,
-      authEmail,
-      password: "***",
-      envEmail: process.env.NEXT_PUBLIC_AUTH_EMAIL,
-      envPassword: process.env.NEXT_PUBLIC_AUTH_PASSWORD ? "***" : "undefined",
-    });
 
     // Check credentials
     if (email === authEmail && password === authPassword) {
@@ -51,11 +44,9 @@ export function useAuth() {
       }`; // 7 days
 
       setUser({ email, isLoggedIn: true });
-      console.log("🔍 Login successful");
       return true;
     }
 
-    console.log("🔍 Login failed - invalid credentials");
     return false;
   };
 

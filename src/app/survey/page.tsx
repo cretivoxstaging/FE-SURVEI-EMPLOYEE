@@ -41,25 +41,13 @@ export default function SurveyPage() {
   // Auto-redirect to completed page if already submitted
   useEffect(() => {
     if (selectedEmployeeId && hasSubmittedThisYear && submissionData && !submissionCheckLoading) {
-      console.log("🔄 Auto-redirecting to completed page - user already submitted this year")
       router.push('/survey/completed')
     }
   }, [selectedEmployeeId, hasSubmittedThisYear, submissionData, submissionCheckLoading, router])
 
   // Debug logging
-  console.log("🔍 Survey Page Debug:", {
-    selectedEmployeeId,
-    isSurveyInProgress: isSurveyInProgress(),
-    progressData,
-    hasSubmittedThisYear,
-    submissionData,
-    currentYear: new Date().getFullYear()
-  })
 
   // Debug logging seperti di survey configuration
-  console.log("📊 Survey Page - Sections data:", sections);
-  console.log("📊 Survey Page - Sections loading:", sectionsLoading);
-  console.log("📊 Survey Page - Sections error:", sectionsError, sectionsErrorObj);
 
   const [selectedEmployee, setSelectedEmployee] = useState<{
     id: string
@@ -69,12 +57,6 @@ export default function SurveyPage() {
   } | null>(null)
 
   // Debug logging for selectedEmployee
-  console.log("🔍 Selected Employee Debug:", {
-    selectedEmployee,
-    selectedEmployeeId,
-    isSurveyInProgress: isSurveyInProgress(),
-    progressData
-  })
 
 
   useEffect(() => {
@@ -97,7 +79,6 @@ export default function SurveyPage() {
 
     // Check if user has already submitted this year
     if (hasSubmittedThisYear && submissionData) {
-      console.log("🚫 User already submitted this year, redirecting to thank you page")
       router.push('/survey/completed')
       return
     }
@@ -280,13 +261,6 @@ export default function SurveyPage() {
                         onSelect={() => {
                           const isSame = String(emp.id) === selectedEmployeeId
                           const employeeId = String(emp.id)
-                          console.log("🔍 Employee Selected:", {
-                            empId: emp.id,
-                            empIdType: typeof emp.id,
-                            employeeId,
-                            employeeIdType: typeof employeeId,
-                            empName: emp.name
-                          })
                           setSelectedEmployeeId(isSame ? "" : employeeId)
                           setSelectedEmployee(isSame ? null : {
                             id: employeeId,

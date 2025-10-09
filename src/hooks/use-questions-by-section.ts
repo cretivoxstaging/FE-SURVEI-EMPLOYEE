@@ -22,7 +22,6 @@ export const useQuestionsBySection = (sectionId: string) => {
   return useQuery<ConfigQuestion[]>({
     queryKey: ["questions", "section", sectionId],
     queryFn: async () => {
-      console.log("🔍 Fetching questions for section ID:", sectionId);
 
       // Since we removed the section-specific endpoint, we'll get all questions and filter
       const response = await apiClient.get("/api/v1/question");
@@ -39,10 +38,6 @@ export const useQuestionsBySection = (sectionId: string) => {
         questionsData = response.data;
       } else {
         console.warn("⚠️ Unexpected API response format:", response.data);
-        console.log(
-          "📊 Raw API response:",
-          JSON.stringify(response.data, null, 2)
-        );
 
         // Don't use fallback data - throw error to see what's happening
         throw new Error(
@@ -54,14 +49,10 @@ export const useQuestionsBySection = (sectionId: string) => {
       const questions: ApiQuestion[] = questionsData.filter(
         (q: ApiQuestion) => {
           const matchesId = String(q.sectionId) === String(sectionId);
-          console.log(
-            `🔍 Filtering question by section ID: "${q.sectionId}" === "${sectionId}" = ${matchesId}`
-          );
           return matchesId;
         }
       );
 
-      console.log("✅ Fetched and filtered questions by section:", questions);
 
       return questions.map(
         (question): ConfigQuestion => ({

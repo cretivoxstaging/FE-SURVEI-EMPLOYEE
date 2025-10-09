@@ -42,35 +42,17 @@ export async function DELETE(
   try {
     const sectionId = params.id;
 
-    console.log(`🗑️ Deleting all questions for section ${sectionId}`);
-    console.log(`🗑️ Using token:`, TOKEN);
-    console.log(`🗑️ Token length:`, TOKEN?.length);
 
     try {
       // Try to call external API first
-      console.log(
-        `🔄 Attempting to delete all questions for section ${sectionId} from external API...`
-      );
       const { data } = await instance.delete(
         `/question/sections/${sectionId}/questiondelete`
-      );
-      console.log(
-        `✅ Successfully deleted all questions for section ${sectionId} from external API:`,
-        data
       );
       return NextResponse.json(data);
     } catch (externalError: unknown) {
       const error = externalError as ApiError;
-      console.log(
-        `⚠️ External API DELETE failed:`,
-        error.response?.status,
-        error.response?.data
-      );
 
       // If external API fails, simulate the delete operation
-      console.log(
-        `⚠️ Simulating delete for all questions in section ${sectionId}`
-      );
 
       const data = {
         message: "All questions deleted successfully",
@@ -82,10 +64,6 @@ export async function DELETE(
         }: ${error.response?.data?.message || error.message}`,
       };
 
-      console.log(
-        `✅ Simulated delete for all questions in section ${sectionId}:`,
-        data
-      );
       return NextResponse.json(data);
     }
   } catch (err: unknown) {

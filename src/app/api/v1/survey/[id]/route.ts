@@ -19,11 +19,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("➡️ Fetching survey by ID:", params.id);
-    console.log("➡️ Using token:", TOKEN);
 
     const { data } = await instance.get(`/survey/${params.id}`);
-    console.log("📊 Raw survey data by ID from API:", data);
 
     // Transform the data to include proper structure with timestamps
     if (data && data.data) {
@@ -65,7 +62,6 @@ export async function GET(
           data: transformedEmployee,
         };
 
-        console.log("📊 Transformed survey data by ID:", response);
         return NextResponse.json(response);
       }
     }

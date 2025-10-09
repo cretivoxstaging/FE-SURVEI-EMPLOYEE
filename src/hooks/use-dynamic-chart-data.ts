@@ -35,28 +35,15 @@ export const useDynamicChartData = () => {
   const getAllSurveyResults = useQuery({
     queryKey: ["all-survey-results"],
     queryFn: async (): Promise<AllSurveyResultsResponse> => {
-      console.log("🔍 Fetching survey results...");
       try {
         const response = await apiClient.get("/api/v1/survey");
-        console.log("🔍 Survey API response:", response);
-        console.log("🔍 Survey API response.data:", response.data);
-        console.log("🔍 Survey API response.data.data:", response.data?.data);
-        console.log(
-          "🔍 Survey API response.data.data length:",
-          response.data?.data?.length
-        );
 
         // Debug: Show sample survey data structure
         if (response.data?.data && response.data.data.length > 0) {
-          console.log(
-            "🔍 Sample survey data structure:",
-            JSON.stringify(response.data.data[0], null, 2)
-          );
         }
 
         return response.data;
       } catch (error) {
-        console.log("🔍 Survey API error:", error);
         throw error;
       }
     },
@@ -76,26 +63,15 @@ export const useDynamicChartData = () => {
   // Process data for Salary chart
   const getSalaryData = (): ChartData[] => {
     if (!getAllSurveyResults.data?.data) {
-      console.log("🔍 No survey data available for salary chart");
       return [];
     }
 
     const surveyResults = getAllSurveyResults.data.data;
     const responses: string[] = [];
 
-    console.log(
-      "🔍 Salary: Processing survey results...",
-      surveyResults.length
-    );
 
     // Extract salary responses from survey results - ONLY 1 response per employee
     surveyResults.forEach((result) => {
-      console.log(
-        "🔍 Processing employee:",
-        result.employeeID,
-        "Name:",
-        result.name
-      );
 
       if (
         result.surveyResult &&
@@ -105,31 +81,16 @@ export const useDynamicChartData = () => {
         // Get only the LATEST submission for this employee
         const latestSubmission =
           result.surveyResult[result.surveyResult.length - 1];
-        console.log(
-          "🔍 Latest submission for employee",
-          result.employeeID,
-          ":",
-          latestSubmission
-        );
 
         if (
           latestSubmission.dataResult &&
           Array.isArray(latestSubmission.dataResult)
         ) {
-          console.log(
-            "🔍 DataResult sections:",
-            latestSubmission.dataResult.map((s) => s.section)
-          );
 
           latestSubmission.dataResult.forEach((section) => {
-            console.log("🔍 Processing section:", section.section);
-            console.log("🔍 Section questions:", section.question);
-            console.log("🔍 Section answers:", section.answer);
 
             if (section.question && section.answer) {
               section.question.forEach((question, index) => {
-                console.log("🔍 Question", index, ":", question);
-                console.log("🔍 Answer", index, ":", section.answer[index]);
 
                 // Match salary question - be more flexible
                 if (
@@ -154,19 +115,10 @@ export const useDynamicChartData = () => {
                     responses.push(
                       optionMapping[answer as keyof typeof optionMapping]
                     );
-                    console.log(
-                      `✅ Salary: Mapped "${answer}" to "${
-                        optionMapping[answer as keyof typeof optionMapping]
-                      }"`
-                    );
                   } else if (answer) {
                     responses.push(answer);
-                    console.log(`✅ Salary: Using direct answer "${answer}"`);
                   }
 
-                  console.log(
-                    `✅ Salary: Found response "${answer}" for employee ${result.employeeID}`
-                  );
                 }
               });
             }
@@ -185,10 +137,6 @@ export const useDynamicChartData = () => {
       return { category: option, count, percentage };
     });
 
-    console.log("📊 Salary Chart Data:", data);
-    console.log("📊 Total Salary Responses:", responses.length);
-    console.log("📊 Salary Responses:", responses);
-    console.log("📊 Salary Question Found:", salaryQuestion);
 
     // Debug: Show how many unique employees responded
     const uniqueEmployees = new Set();
@@ -201,7 +149,6 @@ export const useDynamicChartData = () => {
         uniqueEmployees.add(result.employeeID);
       }
     });
-    console.log("📊 Unique employees with survey data:", uniqueEmployees.size);
 
     return data;
   };
@@ -266,9 +213,6 @@ export const useDynamicChartData = () => {
                     responses.push(answer);
                   }
 
-                  console.log(
-                    `✅ Physical Environment: Found response "${answer}" for employee ${result.employeeID}`
-                  );
                 }
               });
             }
@@ -287,9 +231,6 @@ export const useDynamicChartData = () => {
       return { category: option, count, percentage };
     });
 
-    console.log("📊 Physical Environment Chart Data:", data);
-    console.log("📊 Total Environment Responses:", responses.length);
-    console.log("📊 Environment Responses:", responses);
 
     // Debug: Show how many unique employees responded
     const uniqueEmployees = new Set();
@@ -302,7 +243,6 @@ export const useDynamicChartData = () => {
         uniqueEmployees.add(result.employeeID);
       }
     });
-    console.log("📊 Unique employees with survey data:", uniqueEmployees.size);
 
     return data;
   };
@@ -365,9 +305,6 @@ export const useDynamicChartData = () => {
                     responses.push(answer);
                   }
 
-                  console.log(
-                    `✅ Appreciation: Found response "${answer}" for employee ${result.employeeID}`
-                  );
                 }
               });
             }
@@ -386,9 +323,6 @@ export const useDynamicChartData = () => {
       return { category: option, count, percentage };
     });
 
-    console.log("📊 Appreciation Chart Data:", data);
-    console.log("📊 Total Appreciation Responses:", responses.length);
-    console.log("📊 Appreciation Responses:", responses);
 
     // Debug: Show how many unique employees responded
     const uniqueEmployees = new Set();
@@ -401,7 +335,6 @@ export const useDynamicChartData = () => {
         uniqueEmployees.add(result.employeeID);
       }
     });
-    console.log("📊 Unique employees with survey data:", uniqueEmployees.size);
 
     return data;
   };

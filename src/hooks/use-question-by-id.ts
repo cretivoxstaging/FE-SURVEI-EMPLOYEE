@@ -21,7 +21,6 @@ export const useQuestionById = (questionId: string) => {
   return useQuery<ConfigQuestion>({
     queryKey: ["question", questionId],
     queryFn: async () => {
-      console.log("🔍 Fetching question by ID:", questionId);
 
       const res = await fetch(`/api/v1/question/${questionId}`);
 
@@ -32,7 +31,6 @@ export const useQuestionById = (questionId: string) => {
       }
 
       const result = await res.json();
-      console.log("✅ Fetched question by ID:", result);
 
       const question: ApiQuestion = result.data || result;
 

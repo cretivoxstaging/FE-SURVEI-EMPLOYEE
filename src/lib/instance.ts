@@ -10,7 +10,6 @@ export const instance = axios.create({
 
 
 instance.interceptors.request.use((config) => {
-  console.log("[Axios Request]", config.method?.toUpperCase(), config.url);
   return config;
 });
 

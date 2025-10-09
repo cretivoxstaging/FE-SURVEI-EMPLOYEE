@@ -31,28 +31,15 @@ export function useSimpleChartData(selectedYear?: string) {
   const getAllSurveyResults = useQuery({
     queryKey: ["all-survey-results"],
     queryFn: async (): Promise<AllSurveyResultsResponse> => {
-      console.log("🔍 Fetching survey results...");
       try {
         const response = await apiClient.get("/api/v1/survey");
-        console.log("🔍 Survey API response:", response);
-        console.log("🔍 Survey API response.data:", response.data);
-        console.log("🔍 Survey API response.data.data:", response.data?.data);
-        console.log(
-          "🔍 Survey API response.data.data length:",
-          response.data?.data?.length
-        );
 
         // Debug: Show sample survey data structure
         if (response.data?.data && response.data.data.length > 0) {
-          console.log(
-            "🔍 Sample survey data structure:",
-            JSON.stringify(response.data.data[0], null, 2)
-          );
         }
 
         return response.data;
       } catch (error) {
-        console.log("🔍 Survey API error:", error);
         throw error;
       }
     },
@@ -78,7 +65,6 @@ export function useSimpleChartData(selectedYear?: string) {
   // Process data for Salary chart
   const getSalaryData = (): ChartData[] => {
     if (!getAllSurveyResults.data?.data) {
-      console.log("🔍 No survey data available for salary chart");
       return [];
     }
 
@@ -86,20 +72,9 @@ export function useSimpleChartData(selectedYear?: string) {
     const filteredResults = filterDataByYear(allSurveyResults);
     const responses: string[] = [];
 
-    console.log(
-      "🔍 Salary: Processing survey results...",
-      filteredResults.length
-    );
-    console.log("🔍 Selected year:", selectedYear || "All years");
 
     // Extract salary responses from survey results
     filteredResults.forEach((result) => {
-      console.log(
-        "🔍 Processing employee:",
-        result.employeeID,
-        "Name:",
-        result.name
-      );
 
       if (
         result.surveyResult &&
@@ -109,19 +84,12 @@ export function useSimpleChartData(selectedYear?: string) {
         // Get only the LATEST submission for this employee
         const latestSubmission =
           result.surveyResult[result.surveyResult.length - 1];
-        console.log(
-          "🔍 Latest submission for employee",
-          result.employeeID,
-          ":",
-          latestSubmission
-        );
 
         if (
           latestSubmission.dataResult &&
           Array.isArray(latestSubmission.dataResult)
         ) {
           latestSubmission.dataResult.forEach((section) => {
-            console.log("🔍 Processing section:", section.section);
 
             // Match salary section specifically
             if (
@@ -130,7 +98,6 @@ export function useSimpleChartData(selectedYear?: string) {
               section.answer.length > 0
             ) {
               const answer = section.answer[0]; // First answer
-              console.log("🔍 Salary answer:", answer);
 
               // Map answer to standard format
               const answerMapping: { [key: string]: string } = {
@@ -149,9 +116,6 @@ export function useSimpleChartData(selectedYear?: string) {
               const mappedAnswer = answerMapping[answer] || answer;
               responses.push(mappedAnswer);
 
-              console.log(
-                `✅ Salary: Found response "${answer}" -> "${mappedAnswer}" for employee ${result.employeeID}`
-              );
             }
           });
         }
@@ -167,9 +131,6 @@ export function useSimpleChartData(selectedYear?: string) {
       return { category: option, count, percentage };
     });
 
-    console.log("📊 Salary Chart Data:", data);
-    console.log("📊 Total Salary Responses:", responses.length);
-    console.log("📊 Salary Responses:", responses);
 
     return data;
   };
@@ -177,7 +138,6 @@ export function useSimpleChartData(selectedYear?: string) {
   // Process data for Physical Work Environment chart
   const getPhysicalWorkEnvironmentData = (): ChartData[] => {
     if (!getAllSurveyResults.data?.data) {
-      console.log("🔍 No survey data available for physical environment chart");
       return [];
     }
 
@@ -185,20 +145,9 @@ export function useSimpleChartData(selectedYear?: string) {
     const filteredResults = filterDataByYear(allSurveyResults);
     const responses: string[] = [];
 
-    console.log(
-      "🔍 Physical Environment: Processing survey results...",
-      filteredResults.length
-    );
-    console.log("🔍 Selected year:", selectedYear || "All years");
 
     // Extract physical work environment responses from survey results
     filteredResults.forEach((result) => {
-      console.log(
-        "🔍 Processing employee:",
-        result.employeeID,
-        "Name:",
-        result.name
-      );
 
       if (
         result.surveyResult &&
@@ -208,19 +157,12 @@ export function useSimpleChartData(selectedYear?: string) {
         // Get only the LATEST submission for this employee
         const latestSubmission =
           result.surveyResult[result.surveyResult.length - 1];
-        console.log(
-          "🔍 Latest submission for employee",
-          result.employeeID,
-          ":",
-          latestSubmission
-        );
 
         if (
           latestSubmission.dataResult &&
           Array.isArray(latestSubmission.dataResult)
         ) {
           latestSubmission.dataResult.forEach((section) => {
-            console.log("🔍 Processing section:", section.section);
 
             // Match physical work environment section specifically
             if (
@@ -229,7 +171,6 @@ export function useSimpleChartData(selectedYear?: string) {
               section.answer.length > 0
             ) {
               const answer = section.answer[0]; // First answer
-              console.log("🔍 Physical Environment answer:", answer);
 
               // Map answer to standard format
               const answerMapping: { [key: string]: string } = {
@@ -248,9 +189,6 @@ export function useSimpleChartData(selectedYear?: string) {
               const mappedAnswer = answerMapping[answer] || answer;
               responses.push(mappedAnswer);
 
-              console.log(
-                `✅ Physical Environment: Found response "${answer}" -> "${mappedAnswer}" for employee ${result.employeeID}`
-              );
             }
           });
         }
@@ -266,9 +204,6 @@ export function useSimpleChartData(selectedYear?: string) {
       return { category: option, count, percentage };
     });
 
-    console.log("📊 Physical Environment Chart Data:", data);
-    console.log("📊 Total Environment Responses:", responses.length);
-    console.log("📊 Environment Responses:", responses);
 
     return data;
   };
@@ -276,7 +211,6 @@ export function useSimpleChartData(selectedYear?: string) {
   // Process data for Appreciation chart
   const getAppreciationData = (): ChartData[] => {
     if (!getAllSurveyResults.data?.data) {
-      console.log("🔍 No survey data available for appreciation chart");
       return [];
     }
 
@@ -284,20 +218,9 @@ export function useSimpleChartData(selectedYear?: string) {
     const filteredResults = filterDataByYear(allSurveyResults);
     const responses: string[] = [];
 
-    console.log(
-      "🔍 Appreciation: Processing survey results...",
-      filteredResults.length
-    );
-    console.log("🔍 Selected year:", selectedYear || "All years");
 
     // Extract appreciation responses from survey results
     filteredResults.forEach((result) => {
-      console.log(
-        "🔍 Processing employee:",
-        result.employeeID,
-        "Name:",
-        result.name
-      );
 
       if (
         result.surveyResult &&
@@ -307,19 +230,12 @@ export function useSimpleChartData(selectedYear?: string) {
         // Get only the LATEST submission for this employee
         const latestSubmission =
           result.surveyResult[result.surveyResult.length - 1];
-        console.log(
-          "🔍 Latest submission for employee",
-          result.employeeID,
-          ":",
-          latestSubmission
-        );
 
         if (
           latestSubmission.dataResult &&
           Array.isArray(latestSubmission.dataResult)
         ) {
           latestSubmission.dataResult.forEach((section) => {
-            console.log("🔍 Processing section:", section.section);
 
             // Match appreciation section specifically
             if (
@@ -328,7 +244,6 @@ export function useSimpleChartData(selectedYear?: string) {
               section.answer.length > 0
             ) {
               const answer = section.answer[0]; // First answer
-              console.log("🔍 Appreciation answer:", answer);
 
               // Map answer to standard format
               const answerMapping: { [key: string]: string } = {
@@ -343,9 +258,6 @@ export function useSimpleChartData(selectedYear?: string) {
               const mappedAnswer = answerMapping[answer] || answer;
               responses.push(mappedAnswer);
 
-              console.log(
-                `✅ Appreciation: Found response "${answer}" -> "${mappedAnswer}" for employee ${result.employeeID}`
-              );
             }
           });
         }
@@ -361,9 +273,6 @@ export function useSimpleChartData(selectedYear?: string) {
       return { category: option, count, percentage };
     });
 
-    console.log("📊 Appreciation Chart Data:", data);
-    console.log("📊 Total Appreciation Responses:", responses.length);
-    console.log("📊 Appreciation Responses:", responses);
 
     return data;
   };

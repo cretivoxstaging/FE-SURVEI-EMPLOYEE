@@ -73,12 +73,6 @@ export const useQuestions = (
 
       const list: ApiQuestion[] = questionsData;
 
-      console.log("🔍 Questions API Response:", {
-        sectionId,
-        sectionTitle,
-        allQuestions: list,
-        questionsCount: list.length,
-      });
 
       // If sectionId is empty, return all questions
       let filteredQuestions = list;
@@ -86,26 +80,10 @@ export const useQuestions = (
         filteredQuestions = list.filter((q: ApiQuestion) => {
           const matchesTitle = sectionTitle && q.sectionTitle === sectionTitle;
           const matchesId = String(q.sectionId) === String(sectionId);
-          console.log("🔍 Question filter check:", {
-            questionId: q.id,
-            questionText: q.text || q.question,
-            questionSectionId: q.sectionId,
-            questionSectionTitle: q.sectionTitle,
-            targetSectionId: sectionId,
-            targetSectionTitle: sectionTitle,
-            matchesTitle,
-            matchesId,
-            willInclude: matchesTitle || matchesId,
-          });
           return matchesTitle || matchesId;
         });
       }
 
-      console.log("🔍 Filtered Questions:", {
-        sectionId,
-        filteredCount: filteredQuestions.length,
-        filteredQuestions,
-      });
 
       return filteredQuestions.map((q): ConfigQuestion => {
         // Map API types to frontend types
@@ -142,12 +120,6 @@ export const useQuestions = (
           options = ["1", "2", "3", "4", "5"];
         }
 
-        console.log("🔍 Question mapping:", {
-          originalType: q.type,
-          mappedType,
-          originalOption: q.option,
-          mappedOptions: options,
-        });
 
         return {
           id: String(q.id ?? q.uuid ?? Date.now()),

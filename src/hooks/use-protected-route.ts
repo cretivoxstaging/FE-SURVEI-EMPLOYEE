@@ -10,11 +10,9 @@ export function useProtectedRoute() {
     const email = localStorage.getItem("user_email");
 
     if (!email) {
-      console.log("❌ No user found, redirecting to login");
       router.push("/auth/login");
       return;
     }
 
-    console.log("✅ User authenticated:", email);
   }, [router]);
 }

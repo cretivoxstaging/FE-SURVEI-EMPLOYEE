@@ -63,39 +63,23 @@ export default function SurveySectionPage() {
   // Auto-redirect to completed page if already submitted
   useEffect(() => {
     if (selectedEmployeeId && hasSubmittedThisYear && submissionData && !submissionCheckLoading) {
-      console.log("🔄 Auto-redirecting to completed page - user already submitted this year")
       router.push('/survey/completed')
     }
   }, [selectedEmployeeId, hasSubmittedThisYear, submissionData, submissionCheckLoading, router])
 
   // Debug logging - sama seperti di survey configuration
-  console.log("📊 Sections data:", sections);
-  console.log("📊 Sections loading:", sectionsLoading);
-  console.log("📊 Sections error:", sectionsError, sectionsErrorObj);
-  console.log("🔍 Section ID from params:", sectionId, "Type:", typeof sectionId);
-  console.log("🔍 Selected Employee ID:", selectedEmployeeId);
-  console.log("🔍 Has Submitted This Year:", hasSubmittedThisYear);
 
   // Get current section data - sama seperti di survey configuration
   // Try different comparison methods to handle type mismatches
   const currentSection = sections?.find((s: Section) => {
     const sectionIdStr = String(sectionId)
     const sIdStr = String(s.id)
-    console.log("🔍 Comparing:", { sectionIdStr, sIdStr, exact: s.id === sectionId, string: sIdStr === sectionIdStr })
     return s.id === sectionId || sIdStr === sectionIdStr
   })
   const sectionTitle = currentSection?.title
 
-  console.log("🔍 Current Section Title:", sectionTitle)
 
   // Debug current section finding
-  console.log("🔍 Current section search:", {
-    sectionId,
-    sectionsLength: sections?.length,
-    sectionsIds: sections?.map((s: Section) => ({ id: s.id, title: s.title })),
-    currentSection,
-    sectionTitle
-  });
 
   // Fetch questions untuk section ini - sama seperti di survey configuration
   const { questions, isLoading: questionsLoading, isError: questionsError, error: questionsErrorObj } = useQuestion(
@@ -103,12 +87,6 @@ export default function SurveySectionPage() {
     sectionTitle
   )
 
-  console.log(`🏗️ SectionCard for "${sectionTitle}" (ID: ${sectionId}):`, {
-    questions,
-    questionsLoading,
-    questionsError,
-    questionsErrorObj
-  });
 
   // State management
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
@@ -142,14 +120,6 @@ export default function SurveySectionPage() {
   const prevSection = sections?.[currentIndex - 1]
 
   // Debug navigation data
-  console.log("🔍 Navigation Debug:", {
-    sectionId,
-    currentIndex,
-    totalSections,
-    nextSection,
-    prevSection,
-    sections: sections?.map((s: Section) => ({ id: s.id, title: s.title }))
-  });
 
   // Load employee from localStorage
   useEffect(() => {
@@ -200,12 +170,10 @@ export default function SurveySectionPage() {
         return acc
       }, {} as Record<string, string | string[]>)
 
-      console.log("🔍 Loading answers from survey progress:", { sectionId, progressAnswers })
       setAnswers(progressAnswers)
     } else {
       // Fallback to localStorage
       const saved = localStorage.getItem(`answers-${sectionId}`)
-      console.log("🔍 Loading answers from localStorage:", { sectionId, saved })
       if (saved) {
         const parsedAnswers = JSON.parse(saved)
         // Extract answer values from AnswerData structure
@@ -220,7 +188,6 @@ export default function SurveySectionPage() {
           }
           return acc
         }, {} as Record<string, string | string[]>)
-        console.log("🔍 Extracted answers:", extractedAnswers)
         setAnswers(extractedAnswers)
       }
     }
@@ -292,25 +259,11 @@ export default function SurveySectionPage() {
 
   // Handle answer changes
   const handleAnswerChange = (questionId: string, value: string | string[], questionText: string) => {
-    console.log("🔍 handleAnswerChange called:", {
-      questionId,
-      value,
-      questionText,
-      sectionId,
-      sectionTitle,
-      isSurveyInProgress
-    })
     const newAnswers = { ...answers, [questionId]: value }
     setAnswers(newAnswers)
 
     // Save to survey progress if in progress, otherwise save to localStorage
     if (isSurveyInProgress) {
-      console.log("🔍 Saving to survey progress with:", {
-        questionId,
-        value,
-        questionText,
-        sectionTitle: sectionTitle || ""
-      })
       saveAnswer(questionId, value, questionText, sectionTitle || "")
     } else {
       // For localStorage fallback, save with full data structure
@@ -319,55 +272,41 @@ export default function SurveySectionPage() {
         sectionTitle: sectionTitle || "",
         answer: value,
       }
-      console.log("🔍 Saving to localStorage with answerData:", answerData)
       const savedAnswers = JSON.parse(localStorage.getItem(`answers-${sectionId}`) || "{}")
       savedAnswers[questionId] = answerData
       localStorage.setItem(`answers-${sectionId}`, JSON.stringify(savedAnswers))
-      console.log("🔍 Full localStorage data:", savedAnswers)
     }
 
-    console.log("🔍 Updated answers:", newAnswers)
-    console.log("🔍 Saved to:", isSurveyInProgress ? "survey progress" : "localStorage")
   }
 
   // Check if all questions are answered (all questions are now required)
   const areAllQuestionsAnswered = () => {
     if (!questions || questions.length === 0) return true
 
-    console.log("🔍 All questions check (all required):", {
-      totalQuestions: questions.length,
-      questionIds: questions.map(q => ({ id: q.id, text: q.text })),
-      currentAnswers: answers
-    })
 
     const result = questions.every((question) => {
       const answer = answers[question.id]
 
       // Check if answer exists and is not empty
       if (!answer) {
-        console.log("❌ Question not answered:", { questionId: question.id, questionText: question.text })
         return false
       }
 
       // For string answers, check if not empty
       if (typeof answer === 'string') {
         const isValid = answer.trim() !== ''
-        console.log("🔍 String answer check:", { questionId: question.id, answer, isValid })
         return isValid
       }
 
       // For array answers (checkbox), check if not empty
       if (Array.isArray(answer)) {
         const isValid = answer.length > 0
-        console.log("🔍 Array answer check:", { questionId: question.id, answer, isValid })
         return isValid
       }
 
-      console.log("❌ Unknown answer type:", { questionId: question.id, answer, type: typeof answer })
       return false
     })
 
-    console.log("🔍 All questions answered:", result)
     return result
   }
 
@@ -381,13 +320,6 @@ export default function SurveySectionPage() {
   }
 
   const handleNext = async () => {
-    console.log("🔍 HandleNext Debug:", {
-      nextSection,
-      currentIndex,
-      totalSections,
-      hasNextSection: !!nextSection,
-      isSurveyInProgress
-    });
 
     // Mark current section as completed if survey is in progress
     if (isSurveyInProgress) {
@@ -395,7 +327,6 @@ export default function SurveySectionPage() {
     }
 
     if (nextSection) {
-      console.log("🚀 Navigating to next section:", nextSection.id);
 
       // Update current section in progress
       if (isSurveyInProgress) {
@@ -420,8 +351,6 @@ export default function SurveySectionPage() {
   // Submit final survey using progress data
   const submitFinalSurvey = async (progressData: SurveyProgressData) => {
     try {
-      console.log("🔍 Progress Data received:", progressData)
-      console.log("🔍 Progress Data answers:", progressData.answers)
 
       // Convert answers to dataResult format
       const dataResult: Array<{
@@ -435,7 +364,6 @@ export default function SurveySectionPage() {
 
       Object.keys(progressData.answers).forEach((questionId) => {
         const answerData = progressData.answers[questionId]
-        console.log("🔍 Processing answer:", { questionId, answerData })
 
         const section = answerData?.sectionTitle || "Unknown Section"
         const questionText = answerData?.questionText || "Unknown Question"
@@ -451,7 +379,6 @@ export default function SurveySectionPage() {
         })
       })
 
-      console.log("🔍 Answers by section:", answersBySection)
 
       // Convert to array format
       Object.keys(answersBySection).forEach((sectionTitle) => {
@@ -465,7 +392,6 @@ export default function SurveySectionPage() {
         })
       })
 
-      console.log("🔍 Final dataResult:", dataResult)
 
       // Get selected date from localStorage
       const selectedDate = localStorage.getItem("selectedSurveyDate")
@@ -503,11 +429,9 @@ export default function SurveySectionPage() {
         conclutionResult: "submit",
       }
 
-      console.log("🚀 Submitting survey from progress:", payload)
 
       submitSurvey.mutate(payload, {
         onSuccess: (res) => {
-          console.log("Survey submitted successfully:", res)
           // Clear progress data after successful submission
           clearProgress()
           // Clear localStorage
@@ -596,11 +520,9 @@ export default function SurveySectionPage() {
         conclutionResult: "submit",
       }
 
-      console.log("🚀 Submitting survey from localStorage:", payload)
 
       submitSurvey.mutate(payload, {
         onSuccess: (res) => {
-          console.log("Survey submitted successfully:", res)
           // Clear localStorage
           sections?.forEach((section: Section) => {
             localStorage.removeItem(`answers-${section.id}`)

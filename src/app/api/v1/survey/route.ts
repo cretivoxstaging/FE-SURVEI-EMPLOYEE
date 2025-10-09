@@ -16,10 +16,8 @@ const instance = axios.create({
 
 export async function POST(req: Request) {
   try {
-    console.log("➡️ Using token:", TOKEN);
 
     const body = await req.json();
-    console.log("📝 Survey submission data:", body);
 
     // Add timestamp to the request body
     const currentDate = new Date();
@@ -47,7 +45,6 @@ export async function POST(req: Request) {
       timestamp: currentDate.toISOString(),
     };
 
-    console.log("📝 Survey submission data with timestamp:", bodyWithTimestamp);
 
     // Ensure the data structure is consistent before sending to backend
     const surveyResultArray = Array.isArray(bodyWithTimestamp.surveyResult)
@@ -65,10 +62,8 @@ export async function POST(req: Request) {
       surveyResult: processedSurveyResult,
     };
 
-    console.log("📝 Final payload to backend:", finalPayload);
 
     const { data } = await instance.post("/survey", finalPayload);
-    console.log("✅ Survey submitted successfully:", data);
 
     // Return the response with timestamp included
     const responseWithTimestamp = {
@@ -93,10 +88,8 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    console.log("➡️ Using token:", TOKEN);
 
     const { data } = await instance.get("/survey");
-    console.log("📊 Raw survey data from API:", data);
 
     // Transform the data to include proper structure with timestamps
     if (data && data.data && Array.isArray(data.data)) {
@@ -142,7 +135,6 @@ export async function GET() {
         data: transformedData,
       };
 
-      console.log("📊 Transformed survey data:", response);
       return NextResponse.json(response);
     }
 

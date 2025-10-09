@@ -65,8 +65,6 @@ export default function EmployeePage() {
       return
     }
 
-    console.log(`🔍 Starting Excel export for ${employeesWithResponses.length} employees`)
-
     // Create question map using same logic as Survey Results
     const questionMap = new Map<string, ConfigQuestion>()
 
@@ -109,23 +107,10 @@ export default function EmployeePage() {
       }
     }
 
-    console.log(`🔍 Question Map created:`, {
-      totalQuestions: allQuestions?.length || 0,
-      mapSize: questionMap.size,
-      allKeys: Array.from(questionMap.keys()).sort((a, b) => Number(a) - Number(b)),
-      sampleQuestions: Array.from(questionMap.values()).slice(0, 5).map(q => ({
-        id: q.id,
-        text: q.text?.substring(0, 50) + "...",
-        type: q.type,
-      }))
-    })
-
     // Force fetch all questions to ensure we have complete coverage
     try {
-      console.log("🔍 Force fetching all questions to ensure complete coverage...")
       const response = await apiClient.get("/api/v1/question")
       const rawQuestions = response.data?.data || response.data || []
-      console.log(`🔍 Raw questions fetched:`, rawQuestions.length)
 
       rawQuestions.forEach((q: ApiQuestion) => {
         const stringId = String(q.id)
@@ -145,11 +130,6 @@ export default function EmployeePage() {
             questionMap.set(String(q.id), configQuestion)
           }
         }
-      })
-
-      console.log(`🔍 Question Map after force fetch:`, {
-        mapSize: questionMap.size,
-        allKeys: Array.from(questionMap.keys()).sort((a, b) => Number(a) - Number(b)),
       })
     } catch (error) {
       console.error("Failed to force fetch questions:", error)
@@ -187,9 +167,6 @@ export default function EmployeePage() {
       }
     })
 
-    console.log(`🔍 All questions found (including duplicates):`, Array.from(allQuestionKeys.values()))
-    console.log(`🔍 Total questions:`, allQuestionKeys.size)
-
     // Process data using same logic as Survey Results - directly from surveyResult.dataResult
     const excelData = employeesWithResponses.map((employee, index) => {
       const baseData: Record<string, string | number> = {
@@ -204,26 +181,15 @@ export default function EmployeePage() {
       }
 
       // Initialize all questions with empty values first using new format
-      console.log(`🔍 Initializing questions for ${employee.name}:`, allQuestionKeys.size)
       allQuestionKeys.forEach((value) => {
         const columnName = `${value.section} - ${value.question}`
         baseData[columnName] = ''
-        console.log(`🔍 Initialized: "${columnName}"`)
       })
 
       // Process survey responses using same logic as Survey Results
       if (employee.surveyResult?.surveyResult && Array.isArray(employee.surveyResult.surveyResult)) {
         const latestSubmission = employee.surveyResult.surveyResult[employee.surveyResult.surveyResult.length - 1]
         if (latestSubmission?.dataResult && Array.isArray(latestSubmission.dataResult)) {
-          console.log(`🔍 Processing ${employee.name}:`, {
-            totalSections: latestSubmission.dataResult.length,
-            sections: latestSubmission.dataResult.map(s => ({
-              section: s.section,
-              questionCount: Array.isArray(s.question) ? s.question.length : 0,
-              answerCount: Array.isArray(s.answer) ? s.answer.length : 0
-            }))
-          })
-
           latestSubmission.dataResult.forEach((sectionResult) => {
             if (sectionResult.section && sectionResult.question && sectionResult.answer) {
               const section = sectionResult.section
@@ -240,7 +206,6 @@ export default function EmployeePage() {
                 // Handle array answers (join with comma)
                 const answerValue = Array.isArray(answer) ? answer.join(', ') : answer
 
-                console.log(`🔍 Mapping: "${columnName}" = "${answerValue}"`)
                 baseData[columnName] = answerValue
               })
             }
@@ -248,28 +213,7 @@ export default function EmployeePage() {
         }
       }
 
-      const questionKeys = Object.keys(baseData).filter(key =>
-        !['No', 'Employee Name', 'Email', 'Position', 'Department', 'Branch', 'Survey Status', 'Created At'].includes(key)
-      )
-
-      console.log(`🔍 Final data for ${employee.name}:`, {
-        totalKeys: Object.keys(baseData).length,
-        questionKeys: questionKeys.length,
-        questionKeysList: questionKeys
-      })
-
       return baseData
-    })
-
-    console.log(`🔍 Excel Export Summary:`, {
-      totalEmployees: employeesWithResponses.length,
-      sampleData: excelData[0] ? {
-        employeeName: excelData[0]['Employee Name'],
-        totalColumns: Object.keys(excelData[0]).length,
-        questionColumns: Object.keys(excelData[0]).filter(key =>
-          !['No', 'Employee Name', 'Email', 'Position', 'Department', 'Branch', 'Survey Status', 'Created At'].includes(key)
-        ).length
-      } : null
     })
 
     // Create workbook and worksheet
@@ -298,8 +242,6 @@ export default function EmployeePage() {
 
     // Save file
     XLSX.writeFile(wb, filename)
-
-    console.log(`✅ Excel file exported successfully: ${filename}`)
   }
 
   // Get available years for the year filter
@@ -345,19 +287,12 @@ export default function EmployeePage() {
               Array.isArray(surveyResult.surveyResult) &&
               surveyResult.surveyResult.length > 0
 
-            console.log(`🔍 Employee ${emp.id} (${emp.name}) - Survey Result:`, {
-              hasSurvey,
-              surveyResult: surveyResult?.surveyResult,
-              latestSubmission: surveyResult?.surveyResult?.[surveyResult.surveyResult.length - 1]
-            })
-
             return {
               ...emp,
               hasSurvey,
-              surveyResult: hasSurvey ? surveyResult : null,
-            }
-          })
-        console.log("📊 Merged employees with survey data:", merged)
+            surveyResult: hasSurvey ? surveyResult : null,
+          }
+        })
         setEmployeesWithSurvey(merged)
       } else {
         // No survey data available (either loading failed or no surveys exist yet)
@@ -369,7 +304,6 @@ export default function EmployeePage() {
             hasSurvey: false,
             surveyResult: null,
           }))
-        console.log("📊 No survey results available, setting all employees as no survey:", merged)
         setEmployeesWithSurvey(merged)
       }
     }
@@ -393,13 +327,11 @@ export default function EmployeePage() {
       // Get the latest submission date
       const latestSubmission = employee.surveyResult.surveyResult[employee.surveyResult.surveyResult.length - 1]
       const createdAt = latestSubmission?.date || employee.surveyResult.createdAt
-      console.log(`🔍 Filtering employee ${employee.name} with date: ${createdAt}`)
 
       // Parse DD/MM/YYYY - HH:MM format
       const dateMatch = createdAt.match(/(\d{2})\/(\d{2})\/(\d{4}) - (\d{2}):(\d{2})/)
       if (dateMatch) {
         const [, , , year] = dateMatch
-        console.log(`✅ Survey year: ${year}, Selected Year: ${selectedYear}`)
 
         // Check year filter
         const matchesYear = year === selectedYear

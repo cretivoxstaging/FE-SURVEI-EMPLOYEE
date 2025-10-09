@@ -45,10 +45,6 @@ export const useSurveyData = () => {
         sectionsData = response.data;
       } else {
         console.warn("⚠️ Unexpected API response format:", response.data);
-        console.log(
-          "📊 Raw API response:",
-          JSON.stringify(response.data, null, 2)
-        );
 
         // Don't use fallback data - throw error to see what's happening
         throw new Error(
@@ -56,7 +52,6 @@ export const useSurveyData = () => {
         );
       }
 
-      console.log("📊 Survey sections fetched:", sectionsData);
       return sectionsData;
     },
   });
@@ -84,10 +79,6 @@ export const useSurveyData = () => {
         questionsData = response.data;
       } else {
         console.warn("⚠️ Unexpected API response format:", response.data);
-        console.log(
-          "📊 Raw API response:",
-          JSON.stringify(response.data, null, 2)
-        );
 
         // Don't use fallback data - throw error to see what's happening
         throw new Error(

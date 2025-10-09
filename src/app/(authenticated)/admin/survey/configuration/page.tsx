@@ -26,10 +26,6 @@ export default function SurveyConfigurationPage() {
   // Sections
   const { sections, addSection, updateSection, deleteSection, reorderSections, isLoading, isError, error } = useSection()
 
-  console.log("📊 Sections data:", sections);
-  console.log("📊 Sections loading:", isLoading);
-  console.log("📊 Sections error:", isError, error);
-
   // Manage which section is "active" for add/edit operations
   const [selectedSection, setSelectedSection] = useState<string>("")
 
@@ -187,7 +183,6 @@ export default function SurveyConfigurationPage() {
   }
 
   const openAddQuestionModal = (sectionId: string) => {
-    console.log("🎯 Opening add question modal for sectionId:", sectionId, "type:", typeof sectionId);
     setSelectedSection(sectionId)
     openModal("addQuestion")
   }
@@ -212,7 +207,6 @@ export default function SurveyConfigurationPage() {
   const handleReorderSections = (newOrder: ConfigSection[]) => {
     reorderSections.mutate(newOrder, {
       onSuccess: () => {
-        console.log("✅ Sections reordered successfully");
         toast.success("Sections reordered successfully");
       },
       onError: (error) => {

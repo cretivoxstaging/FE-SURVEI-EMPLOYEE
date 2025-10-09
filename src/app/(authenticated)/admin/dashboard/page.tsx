@@ -65,16 +65,6 @@ export default function Page() {
     appreciation: getAppreciationData(),
   }
 
-  // Debug chart data
-  console.log("🔍 Chart Data Debug:", {
-    physicalWorkEnvironment: chartData.physicalWorkEnvironment,
-    salary: chartData.salary,
-    appreciation: chartData.appreciation,
-    physicalWorkEnvironmentLength: chartData.physicalWorkEnvironment.length,
-    salaryLength: chartData.salary.length,
-    appreciationLength: chartData.appreciation.length,
-  });
-
   return (
     <div className="min-h-screen bg-gray-50">
       <HeaderNavigation />

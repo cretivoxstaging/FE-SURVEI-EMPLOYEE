@@ -58,19 +58,9 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
 
   // Check if employee has submitted this year
   const submissionCheck = useMemo((): YearlySubmissionCheck => {
-    console.log("🔍 Raw API Response:", {
-      employeeId,
-      employeeIdType: typeof employeeId,
-      surveyResults,
-      hasData: !!surveyResults?.data,
-      isArray: Array.isArray(surveyResults?.data),
-      dataLength: surveyResults?.data?.length || 0,
-      currentYear,
-    });
 
     const surveyData = surveyResults?.data;
     if (!surveyData || !Array.isArray(surveyData)) {
-      console.log("❌ No valid data found");
       return {
         hasSubmittedThisYear: false,
         submissionData: null,
@@ -85,45 +75,11 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
         String(survey.employeeID) === String(employeeId)
     );
 
-    console.log("🔍 Employee Submissions Debug:", {
-      employeeId,
-      currentYear,
-      totalSubmissions: employeeSubmissions.length,
-      submissions: employeeSubmissions.map((s: SurveySubmission) => ({
-        id: s.id,
-        createdAt: s.createdAt,
-        employeeID: s.employeeID,
-        employeeIDType: typeof s.employeeID,
-        name: s.name,
-        surveyResultCount: s.surveyResult?.length || 0,
-      })),
-    });
 
     // Debug: Show all submissions for debugging
-    console.log(
-      "🔍 All Survey Submissions:",
-      surveyData.map((s: SurveySubmission) => ({
-        id: s.id,
-        createdAt: s.createdAt,
-        employeeID: s.employeeID,
-        employeeIDType: typeof s.employeeID,
-        name: s.name,
-        surveyResultCount: s.surveyResult?.length || 0,
-      }))
-    );
 
     // Debug: Check if we found any submissions for this employee
     if (employeeSubmissions.length === 0) {
-      console.log("❌ No submissions found for employee:", employeeId);
-      console.log(
-        "Available employee IDs:",
-        surveyData.map((s: SurveySubmission) => ({
-          id: s.id,
-          employeeID: s.employeeID,
-          employeeIDType: typeof s.employeeID,
-          name: s.name,
-        }))
-      );
 
       // Check for Abdul Rohim specifically
       const abdulSubmissions = surveyData.filter(
@@ -132,7 +88,6 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
           s.name?.toLowerCase().includes("rohim") ||
           s.name?.toLowerCase().includes("abdul rohim")
       );
-      console.log("🔍 Abdul Rohim submissions:", abdulSubmissions);
     }
 
     // Check if any submission is from current year
@@ -166,14 +121,6 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
           const [, , , year] = dateMatch;
           const isCurrentYear = year === currentYear;
 
-          console.log("🔍 Year Check Debug:", {
-            employeeId,
-            createdAt: dateToCheck,
-            parsedYear: year,
-            currentYear,
-            isCurrentYear,
-            surveyId: survey.id,
-          });
 
           return isCurrentYear;
         } catch (error) {
@@ -203,30 +150,9 @@ export function useYearlySubmissionCheck(employeeId: string | number) {
       isError,
     };
 
-    console.log("🔍 Final Result Debug:", {
-      employeeId,
-      currentYear,
-      hasSubmittedThisYear: result.hasSubmittedThisYear,
-      submissionData: result.submissionData,
-      totalEmployeeSubmissions: employeeSubmissions.length,
-      foundCurrentYearSubmission: !!currentYearSubmission,
-    });
 
     // Debug: If no submission found, show why
     if (!result.hasSubmittedThisYear && employeeSubmissions.length > 0) {
-      console.log("🔍 Why no current year submission found:", {
-        employeeId,
-        currentYear,
-        submissions: employeeSubmissions.map((s: SurveySubmission) => ({
-          id: s.id,
-          createdAt: s.createdAt,
-          parsedYear: s.createdAt
-            ? s.createdAt.match(
-                /(\d{2})\/(\d{2})\/(\d{4}) - (\d{2}):(\d{2})/
-              )?.[3]
-            : null,
-        })),
-      });
     }
 
     return result;

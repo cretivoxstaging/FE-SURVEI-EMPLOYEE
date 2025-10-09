@@ -23,7 +23,6 @@ export function SurveyStatusGuard({ children }: SurveyStatusGuardProps) {
         // Default to true (active) if no value is set, only block if explicitly set to "0"
         const isActive = surveyActive !== "0"
         setIsSurveyActive(isActive)
-        console.log("🔍 Survey Status Check:", { surveyActive, isActive, defaultingToActive: surveyActive === null })
       } catch (error) {
         console.error("Error checking survey status:", error)
         // Default to active on error

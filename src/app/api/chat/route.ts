@@ -28,16 +28,13 @@ export async function POST(req: Request) {
 
     for (const modelName of modelsToTry) {
       try {
-        console.log(`Trying model: ${modelName}`);
         model = genAI.getGenerativeModel({ model: modelName });
         const context = createSystemPrompts.generalChat(prompt);
         result = await model.generateContentStream({
           contents: [{ role: "user", parts: [{ text: context }] }],
         });
-        console.log(`Successfully used model: ${modelName}`);
         break;
       } catch (modelError: any) {
-        console.log(`Model ${modelName} failed:`, modelError.message);
         lastError = modelError;
         continue;
       }
