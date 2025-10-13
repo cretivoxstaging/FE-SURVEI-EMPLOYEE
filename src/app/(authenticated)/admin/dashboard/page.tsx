@@ -17,13 +17,14 @@ import { YearFilterDropdown } from "@/components/year-filter-dropdown"
 import { YearlySurveyStats } from "@/components/yearly-survey-stats"
 import { useYearlySurveyData } from "@/hooks/use-yearly-survey-data"
 import { useQuestions } from "@/hooks/use-questions"
+import { useSurveyResults } from "@/hooks/use-survey-results"
 
 export default function Page() {
 
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState("")
   const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined)
-  const { isActiveSurvey, toggleSurvey } = useActiveSurvey(true)
+  const { isActiveSurvey, toggleSurvey, isUpdating } = useActiveSurvey()
   const { employees, isLoading, isError } = useEmployee()
   const {
     isLoading: surveyLoading,
@@ -36,6 +37,9 @@ export default function Page() {
 
   // Get questions data for total questions count
   const { questions: allQuestions, isLoading: questionsLoading } = useQuestions("", "", { enabled: true })
+
+  // Get survey results to count responses
+  const { getAllSurveyResults } = useSurveyResults()
 
   const toggleChat = () => setIsChatOpen(!isChatOpen)
 
@@ -54,6 +58,36 @@ export default function Page() {
   const { yearlyData } = useYearlySurveyData(employees || [])
 
   const totalEmployees = employees?.filter((emp: { employee_status: string }) => emp.employee_status !== "Resign").length || 0
+
+  // Calculate survey statistics
+  const surveyStats = (() => {
+    if (!getAllSurveyResults.data?.data) {
+      return {
+        totalResponses: 0,
+        notResponded: totalEmployees,
+        completionRate: 0,
+      }
+    }
+
+    // Count unique employees who have submitted surveys
+    const uniqueRespondents = new Set<string>()
+
+    getAllSurveyResults.data.data.forEach((survey) => {
+      if (survey.surveyResult && Array.isArray(survey.surveyResult) && survey.surveyResult.length > 0) {
+        uniqueRespondents.add(String(survey.employeeID))
+      }
+    })
+
+    const totalResponses = uniqueRespondents.size
+    const notResponded = totalEmployees - totalResponses
+    const completionRate = totalEmployees > 0 ? Math.round((totalResponses / totalEmployees) * 100) : 0
+
+    return {
+      totalResponses,
+      notResponded,
+      completionRate,
+    }
+  })()
 
   // Get real chart data from survey results
   const chartData = {
@@ -88,8 +122,12 @@ export default function Page() {
                   selectedYear={selectedYear}
                   onYearChange={setSelectedYear}
                 />
-                <Button onClick={toggleSurvey} className="bg-black text-white hover:bg-gray-800">
-                  {isActiveSurvey ? "Deactivate Survey" : "Activate Survey"}
+                <Button
+                  onClick={toggleSurvey}
+                  disabled={isUpdating}
+                  className="bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {isUpdating ? "Updating..." : isActiveSurvey ? "Deactivate Survey" : "Activate Survey"}
                 </Button>
               </div>
             </div>
@@ -114,8 +152,14 @@ export default function Page() {
                   <FileText className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-900">1</div>
-                  <p className="text-xs text-green-600 mt-1">5% completion rate</p>
+                  <div className="text-2xl font-bold text-green-900">
+                    {getAllSurveyResults.isLoading ? (
+                      <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+                    ) : (
+                      surveyStats.totalResponses
+                    )}
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">{surveyStats.completionRate}% completion rate</p>
                 </CardContent>
                 <div className="absolute top-0 right-0 w-20 h-20 bg-green-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
               </Card>
@@ -126,7 +170,13 @@ export default function Page() {
                   <UserX className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-900">{totalEmployees - 1}</div>
+                  <div className="text-2xl font-bold text-orange-900">
+                    {getAllSurveyResults.isLoading ? (
+                      <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+                    ) : (
+                      surveyStats.notResponded
+                    )}
+                  </div>
                   <p className="text-xs text-orange-600 mt-1">Employees pending response</p>
                 </CardContent>
                 <div className="absolute top-0 right-0 w-20 h-20 bg-orange-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
@@ -147,17 +197,25 @@ export default function Page() {
               <Card className="relative overflow-hidden bg-white border-2 border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-purple-700">Survey Status</CardTitle>
-                  <div className="w-2 h-2 rounded-full bg-current"></div>
+                  <div className={`w-2 h-2 rounded-full ${isActiveSurvey ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center space-x-2">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                      Active
+                    <Badge
+                      variant="secondary"
+                      className={`${isActiveSurvey
+                        ? 'bg-green-100 text-green-800 border-green-200'
+                        : 'bg-red-100 text-red-800 border-red-200'
+                        }`}
+                    >
+                      {isActiveSurvey ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
-                  <p className="text-xs text-purple-600 mt-1">Last updated: {currentDate}</p>
+                  <p className="text-xs text-purple-600 mt-1">
+                    {isActiveSurvey ? 'Survey accepting responses' : 'Survey closed'}
+                  </p>
                 </CardContent>
-                <div className="absolute top-0 right-0 w-20 h-20 bg-purple-200 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
+                <div className={`absolute top-0 right-0 w-20 h-20 ${isActiveSurvey ? 'bg-green-200' : 'bg-red-200'} rounded-full -translate-y-10 translate-x-10 opacity-20`}></div>
               </Card>
             </div>
 
