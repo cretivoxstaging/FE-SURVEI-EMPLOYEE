@@ -1,13 +1,22 @@
 // components/SurveyChatInterface.tsx
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, X, BarChart3, Trash2 } from "lucide-react";
+import { Send, X, BarChart3, Trash2, AlertTriangle } from "lucide-react";
 import { useChatAnalyze } from "@/hooks/use-chat-analyze";
 import MarkdownRenderer from "./markdown-renderer";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 function TypingBubble() {
   return (
@@ -32,6 +41,13 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
     streamingText,
     messagesEndRef
   } = useChatAnalyze();
+
+  const [showClearDialog, setShowClearDialog] = useState(false);
+
+  const handleClearConfirm = () => {
+    clearMessages();
+    setShowClearDialog(false);
+  };
 
   const suggestedQuestions = [
     {
@@ -66,16 +82,24 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
       <CardHeader className="flex flex-row items-center justify-between px-4 py-3 border-b bg-white">
         <div className="flex items-center gap-2">
           <CardTitle className="text-sm font-semibold text-gray-800">Survey Analytics</CardTitle>
+          {messages.length > 0 && (
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              {messages.length} messages
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearMessages}
-            className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md"
-          >
-            <Trash2 className="h-3.5 w-3.5 text-gray-600" />
-          </Button>
+          {messages.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowClearDialog(true)}
+              className="h-8 w-8 p-0 hover:bg-red-50 rounded-md group"
+              title="Clear chat history"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-gray-600 group-hover:text-red-600" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -212,6 +236,39 @@ export function SurveyChatInterface({ onClose }: { onClose: () => void }) {
           </Button>
         </form>
       </CardFooter>
+
+      {/* Clear History Confirmation Dialog */}
+      <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <DialogTitle>Clear Chat History?</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              This will permanently delete all {messages.length} messages from your chat history. 
+              This action cannot be undone and your conversation will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearDialog(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleClearConfirm}
+              className="bg-red-600 hover:bg-red-700 text-white flex-1"
+            >
+              Clear History
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
