@@ -1,15 +1,53 @@
 // hooks/useChatAnalyze.tsx
 import { useRef, useState, useEffect } from "react";
 
+const CHAT_HISTORY_KEY = "survey-chat-history";
+const MAX_MESSAGES = 100; // Maximum messages to store in localStorage
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+  hasData?: boolean;
+  isFallback?: boolean;
+}
+
+// Load messages from localStorage
+const loadMessagesFromStorage = (): ChatMessage[] => {
+  if (typeof window === "undefined") return [];
+  
+  try {
+    const stored = localStorage.getItem(CHAT_HISTORY_KEY);
+    if (!stored) return [];
+    
+    const parsed = JSON.parse(stored);
+    // Convert timestamp strings back to Date objects
+    return parsed.map((msg: any) => ({
+      ...msg,
+      timestamp: new Date(msg.timestamp)
+    }));
+  } catch (error) {
+    console.error("Failed to load chat history:", error);
+    return [];
+  }
+};
+
+// Save messages to localStorage
+const saveMessagesToStorage = (messages: ChatMessage[]) => {
+  if (typeof window === "undefined") return;
+  
+  try {
+    // Only keep the last MAX_MESSAGES
+    const messagesToStore = messages.slice(-MAX_MESSAGES);
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messagesToStore));
+  } catch (error) {
+    console.error("Failed to save chat history:", error);
+  }
+};
+
 export function useChatAnalyze() {
-  const [messages, setMessages] = useState<Array<{
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: Date;
-    hasData?: boolean;
-    isFallback?: boolean;
-  }>>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessagesFromStorage());
   const [input, setInput] = useState<string>("");
   const [status, setStatus] = useState<"" | "submitted" | "analyzing" | "error">("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -18,6 +56,13 @@ export function useChatAnalyze() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isLoading = status === "submitted" || status === "analyzing" || isStreaming;
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveMessagesToStorage(messages);
+    }
+  }, [messages]);
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -150,6 +195,12 @@ export function useChatAnalyze() {
 
   const clearMessages = () => {
     setMessages([]);
+    // Also clear from localStorage
+    try {
+      localStorage.removeItem(CHAT_HISTORY_KEY);
+    } catch (error) {
+      console.error("Failed to clear chat history:", error);
+    }
   };
 
   return {
