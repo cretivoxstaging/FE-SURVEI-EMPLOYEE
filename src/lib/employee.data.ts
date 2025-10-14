@@ -68,7 +68,7 @@ export const employees = [
     name: "Indira Safitri",
     department: "Marketing",
     position: "Content Creator",
-    employee_status: "Permanent",
+    employee_status: "Freelance",
   },
   {
     id: "11",
@@ -96,7 +96,7 @@ export const employees = [
     name: "Putri Maharani",
     department: "Marketing",
     position: "Digital Marketing",
-    employee_status: "Permanent",
+    employee_status: "Freelance",
   },
   {
     id: "15",
@@ -124,14 +124,14 @@ export const employees = [
     name: "Citra Melati",
     department: "Operations",
     position: "Project Coordinator",
-    employee_status: "Permanent",
+    employee_status: "Probation",
   },
   {
     id: "19",
     name: "Dimas Pratama",
     department: "Sales",
     position: "Business Development",
-    employee_status: "Permanent",
+    employee_status: "Contract",
   },
   {
     id: "20",
