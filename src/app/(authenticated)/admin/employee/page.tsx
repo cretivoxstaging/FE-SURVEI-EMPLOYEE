@@ -24,7 +24,7 @@ interface Employee {
   department: string
   branch: string
   status: "Active" | "Inactive"
-  employee_status?: string
+  employee_status?: "Permanent" | "Probation" | "Contract" | "Freelance" | "Intern" | "Resign"
   hasSurvey?: boolean
   surveyResult?: {
     id: number
@@ -290,9 +290,9 @@ export default function EmployeePage() {
             return {
               ...emp,
               hasSurvey,
-            surveyResult: hasSurvey ? surveyResult : null,
-          }
-        })
+              surveyResult: hasSurvey ? surveyResult : null,
+            }
+          })
         setEmployeesWithSurvey(merged)
       } else {
         // No survey data available (either loading failed or no surveys exist yet)
@@ -309,18 +309,21 @@ export default function EmployeePage() {
     }
   }, [employees, getAllSurveyResults.data, getAllSurveyResults.isError])
 
-  // Filter employees by search term and year
+  // Filter employees by search term and year, exclude Intern status
   const filteredEmployees = employeesWithSurvey.filter((employee) => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase())
 
+    // Exclude Intern status from display
+    const isNotIntern = employee.employee_status !== "Intern"
+
     // If no year filter applied or "all" selected, return search results
     if (!selectedYear || selectedYear === "all") {
-      return matchesSearch
+      return matchesSearch && isNotIntern
     }
 
     // If employee has no survey, only show if no year filter applied
     if (!employee.hasSurvey || !employee.surveyResult || !Array.isArray(employee.surveyResult.surveyResult) || employee.surveyResult.surveyResult.length === 0) {
-      return matchesSearch && (!selectedYear || selectedYear === "all")
+      return matchesSearch && isNotIntern && (!selectedYear || selectedYear === "all")
     }
 
     try {
@@ -336,7 +339,7 @@ export default function EmployeePage() {
         // Check year filter
         const matchesYear = year === selectedYear
 
-        return matchesSearch && matchesYear
+        return matchesSearch && matchesYear && isNotIntern
       } else {
         console.warn('Date format not recognized for filtering:', createdAt)
         return false
@@ -440,6 +443,7 @@ export default function EmployeePage() {
                 <TableHead className="text-white">Position</TableHead>
                 <TableHead className="text-white">Department</TableHead>
                 <TableHead className="text-white">Branch</TableHead>
+                <TableHead className="text-white">Status</TableHead>
                 <TableHead className="text-white">Status Survey</TableHead>
                 <TableHead className="text-white">Action</TableHead>
               </TableRow>
@@ -447,13 +451,13 @@ export default function EmployeePage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
+                  <TableCell colSpan={8} className="text-center">
                     Loading employees...
                   </TableCell>
                 </TableRow>
               ) : filteredEmployees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
+                  <TableCell colSpan={8} className="text-center">
                     No employees found.
                   </TableCell>
                 </TableRow>
@@ -465,6 +469,11 @@ export default function EmployeePage() {
                     <TableCell>{employee.job_position}</TableCell>
                     <TableCell>{employee.department}</TableCell>
                     <TableCell>{employee.branch}</TableCell>
+                    <TableCell>
+                      <Badge className="bg-gray-100 text-gray-800">
+                        {employee.employee_status || "Unknown"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge
                         className={
